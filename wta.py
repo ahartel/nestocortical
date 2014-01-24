@@ -38,12 +38,11 @@ cell_params = {'tau_refrac': 2.0,  # ms
                'v_thresh':  -50.0, # mV
                'tau_syn_E':  2.0,  # ms
                'tau_syn_I':  2.0}  # ms
-n_record = 5
 
 num = {}
 num['nodes'] = 10
-num['exc_neurons'] = 10
-num['inh_neurons'] = 5
+num['exc_neurons'] = 20
+num['inh_neurons'] = 15
 num['inputs'] = 20
 num['conns_per_input'] = 5
 
@@ -72,10 +71,12 @@ if __name__ == "__main__":
 
 	# 3) connect exc. populations to neiboughring inh. population
 	exc_inh_projections = []
+	exc_exc_projections = []
 	#connector = OneToOneConnector(weights=1.0)
 	connector = FixedProbabilityConnector(0.5,weights=1.0)
 	for i in range(num['nodes']):
 		exc_inh_projections.append(Projection(exc_populations[i],inh_populations[i],connector))
+		exc_exc_projections.append(Projection(exc_populations[i],exc_populations[i],connector))
 
 	# 4) connect inh. populations to all other exc. populations
 	connector = FixedProbabilityConnector(0.5,weights=0.7)

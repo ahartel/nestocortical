@@ -1,17 +1,8 @@
 import numpy as np
 import scipy.io as sio
-import sys, socket
+import sys, socket, png
 
 from pyNN.utility import get_script_args
-
-simulator_name = 'nest'
-try:
-    simulator_name = get_script_args(1)[0]
-except Exception:
-    print "Using default simulator nest"
-
-exec("from pyNN.%s import *" % simulator_name)
-
 from pyNN.random import NumpyRNG
 
 seed = 764756387
@@ -23,17 +14,20 @@ cell_params = {'tau_refrac': 2.0,  # ms
                'tau_syn_I':  2.0}  # ms
 
 num = {}
-num['nodes'] = 50
-num['neighbours'] = 4
-num['exc_neurons'] = 10
-num['inh_neurons'] = 30
+#num['nodes'] = 50
+#num['neighbours'] = 4
+num['l0_exc_neurons'] = 100
+num['l1_exc_neurons'] = 50
+num['l0_inh_neurons'] = 25
+num['l1_inh_neurons'] = 13
 num['inputs'] = 1024#*3
-num['conns_per_input'] = 5
+#num['conns_per_input'] = 5
+num['steps'] = 2000
 
 basepath = '/home/ahartel/data/SVHN/train'
 
 def setupNetwork():
-    node = setup(timestep=0.1, min_delay=1.0, max_delay=1.0, debug=True, quit_on_end=False)
+    node = pynn.setup(timestep=0.1, min_delay=1.0, max_delay=1.0, debug=True, quit_on_end=False)
     print "Process with rank %d running on %s" % (node, socket.gethostname())
 
 
@@ -45,96 +39,121 @@ def setupNetwork():
 
     print "[%d] Creating populations" % node
     # 1) excitatory populations
-    exc_populations = []
-    for i in range(num['nodes']):
-        exc_populations.append(Population(num['exc_neurons'], IF_curr_exp, cell_params, label="exc"+str(i)))
-        exc_populations[i].record()
+    l0_exc_population = pynn.Population(num['l0_exc_neurons'], pynn.IF_curr_exp, cell_params, label="exc0")
+    l0_exc_population.record()
+    l1_exc_population = pynn.Population(num['l1_exc_neurons'], pynn.IF_curr_exp, cell_params, label="exc1")
+    l1_exc_population.record()
 
     # 2) inhibitory population
-    inh_population = Population(num['inh_neurons'], IF_curr_exp, cell_params, label="inh")
-    inh_population.record()
+    l0_inh_population = pynn.Population(num['l0_inh_neurons'], pynn.IF_curr_exp, cell_params, label="inh0")
+    l0_inh_population.record()
+    l1_inh_population = pynn.Population(num['l1_inh_neurons'], pynn.IF_curr_exp, cell_params, label="inh1")
+    l1_inh_population.record()
 
     # 3) connect exc. populations to neiboughring inh. population
-    exc_inh_projections = []
-    exc_exc_projections = []
-    inh_connector = FixedProbabilityConnector(0.6,weights=1.0)
-    for i in range(num['nodes']):
-        exc_inh_projections.append(Projection(exc_populations[i],inh_population,inh_connector))
-        for j in range(i-num['neighbours'],i+num['neighbours']+1):
-            if j != i:
-                exc_connector = OneToOneConnector(weights=1.0/abs(j-i))
+    inh_connector = pynn.FixedProbabilityConnector(0.6,weights=1.0)
+    l0_exc_inh_projection = pynn.Projection(l0_exc_population,l0_inh_population,inh_connector)
+    l1_exc_inh_projection = pynn.Projection(l1_exc_population,l1_inh_population,inh_connector)
 
-                if j<0:
-                    j+=num['nodes']
-                if j> num['nodes']-1:
-                    j-=num['nodes']
+    exc_connector = pynn.FixedProbabilityConnector(0.6,weights=1.0,allow_self_connections=False)
+    l0_exc_exc_projection = pynn.Projection(l0_exc_population,l0_exc_population,exc_connector)
+    l1_exc_exc_projection = pynn.Projection(l1_exc_population,l1_exc_population,exc_connector)
 
-                exc_exc_projections.append(Projection(exc_populations[i],exc_populations[j],exc_connector))
+    #for i in range(num['nodes']):
+    #    exc_inh_projections.append(Projection(exc_populations[i],inh_population,inh_connector))
+    #    for j in range(i-num['neighbours'],i+num['neighbours']+1):
+    #        if j != i:
+    #            exc_connector = OneToOneConnector(weights=1.0/abs(j-i))
 
-    # 4) connect inh. populations to all other exc. populations
-    connector = FixedProbabilityConnector(0.6,weights=-1.0)
-    for i in range(num['nodes']):
-        Projection(inh_population, exc_populations[i],connector,target="inhibitory")
+    #            if j<0:
+    #                j+=num['nodes']
+    #            if j> num['nodes']-1:
+    #                j-=num['nodes']
+
+    #            exc_exc_projections.append(Projection(exc_populations[i],exc_populations[j],exc_connector))
+
+    # 4) connect inh. populations to exc. populations
+    connector = pynn.FixedProbabilityConnector(0.6,weights=-1.0)
+    l0_inh_exc_projection = pynn.Projection(l0_inh_population, l0_exc_population,connector,target="inhibitory")
+    l1_inh_exc_projection = pynn.Projection(l1_inh_population, l1_exc_population,connector,target="inhibitory")
 
     # 5)
-    input_populations = []
-    for i in range(num['inputs']):
-        #input_populations.append(Population(1, SpikeSourceArray, {'spike_times': spike_times }, label="input"))
-        input_populations.append(Population(1, SpikeSourcePoisson, {'rate': input_rate }, label="input"))
-        input_populations[i].record()
+    input_population = pynn.Population(num['inputs'], pynn.SpikeSourcePoisson, {'rate': input_rate }, label="input")
+    #input_population.record()
 
     # 6)
-    stdp_model = STDPMechanism(
-        timing_dependence=SpikePairRule(tau_plus=20.0, tau_minus=20.0),
-        weight_dependence=AdditiveWeightDependence(w_min=0, w_max=1.0,
+    stdp_model = pynn.STDPMechanism(
+        timing_dependence=pynn.SpikePairRule(tau_plus=20.0, tau_minus=20.0),
+        weight_dependence=pynn.AdditiveWeightDependence(w_min=0, w_max=1.0,
         A_plus=0.01, A_minus=0.012)
     )
 
-    connector = FixedProbabilityConnector(0.7, weights=1.0)
-    for i in range(num['inputs']):
-        for j in range(num['nodes']):
-            projection = Projection(input_populations[i], exc_populations[j], connector, rng=rng, synapse_dynamics=SynapseDynamics(slow=stdp_model))
+    connector = pynn.FixedProbabilityConnector(0.6, weights=1.0)
+    input_projection = pynn.Projection(input_population, l0_exc_population, connector, rng=rng, synapse_dynamics=pynn.SynapseDynamics(slow=stdp_model))
+    connector = pynn.FixedProbabilityConnector(0.6, weights=1.0)
+    l1_projection = pynn.Projection(l0_exc_population, l1_exc_population, connector, rng=rng, synapse_dynamics=pynn.SynapseDynamics(slow=stdp_model))
 
-    return node,input_populations
+    return node,l0_exc_population,l1_exc_population,l0_inh_population,l1_inh_population,input_population
 
 if __name__ == "__main__":
-    node,input_populations = setupNetwork()
+    simulator_name = 'nest'
+    try:
+        simulator_name = get_script_args(1)[0]
+    except Exception:
+        print "Using default simulator nest"
+    exec("import pyNN.%s as pynn" % simulator_name)
 
-    file_stem = "Results/wta_np%d_%s" % (num_processes(), simulator_name)
+    node,l0_exc_population,l1_exc_population,l0_inh_population,l1_inh_population,input_population = setupNetwork()
+
+    file_stem = "Results/svhn_wta_np%d_%s" % (pynn.num_processes(), simulator_name)
     #projection.saveConnections('%s.conn' % file_stem)
 
-    #for file in glob.glob(basepath+'/*.png'):
-    #    print "Processing file "+file
-    #    f = open(file,'rb')
-    #    r = png.Reader(file=f)
-    #    image = r.read()
-    #    print image
-    #    cnt = 0
-    #    subcnt=0
-    #    for row in image[2]:
-    #        cnt+=1
-    #        subcnt=0
-    #        for pixel in row:
-    #           subcnt+=1 
-    #    print subcnt/3,cnt
+    # input population views
+    input_pop_views = []
+    for i in range(num['inputs']):
+        input_pop_views.append(pynn.PopulationView(input_population,[i]))
 
+    # read matlab file with image data and generate input firing rates
     mat = sio.loadmat(basepath+'/train_32x32.mat')
     data = np.array(mat['X'])
-    stop=100
+    stop=num['steps']
     for i in range(len(mat['y'])):
+        stop-=1
+        print stop
         if stop==0:
             break
         cnt = 0
         # prepare input population firing rates
+        png_data = []
         for row in data[:,:,:,i]:
+            data_set = ()
             for pixel in row:
                 total=0
                 for value in pixel:
+                    data_set += (value,)
                     total+=value
-                input_populations[cnt].set('rate',100.0/(3*256)*value)
+                input_pop_views[cnt].set('rate',100.0/(3*256)*total)
                 cnt+=1
+            png_data.append(data_set)
+
+        with open(basepath+'/generated/'+str(i)+'.png','wb') as f:
+            w = png.Writer(32,32)
+            w.write(f,png_data)
 
         print "[%d] Running simulation" % node
-        run(tstop)
-        stop-=1
+        pynn.run(tstop)
+
+    print "[%d] Writing spikes to disk" % node
+    l0_exc_population.printSpikes('%s_exc_0.ras' % (file_stem,))
+    l1_exc_population.printSpikes('%s_exc_1.ras' % (file_stem,))
+    l0_inh_population.printSpikes('%s_inh_0.ras' % (file_stem,))
+    l1_inh_population.printSpikes('%s_inh_1.ras' % (file_stem,))
+    #input_population.printSpikes('%s_input.ras' % (file_stem,))
+    with open('%s_labels.txt'%(file_stem,),'w') as f:
+        for value in mat['y'][0:num['steps']-1]:
+            f.write('%s\n'%(value[0]))
+
+    print "[%d] Finishing" % node
+    pynn.end()
+    print "[%d] Done" % node
 

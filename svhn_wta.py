@@ -16,13 +16,13 @@ cell_params = {'tau_refrac': 2.0,  # ms
 num = {}
 #num['nodes'] = 50
 #num['neighbours'] = 4
-num['l0_exc_neurons'] = 80
-num['l1_exc_neurons'] = 20
-num['l0_inh_neurons'] = 20
-num['l1_inh_neurons'] = 5
+num['l0_exc_neurons'] = 50
+num['l1_exc_neurons'] = 16
+num['l0_inh_neurons'] = 10
+num['l1_inh_neurons'] = 3
 num['inputs'] = 1024*3
 #num['conns_per_input'] = 5
-num['steps'] = 5000
+num['steps'] = 100
 
 basepath = '/home/ahartel/data/SVHN/train'
 
@@ -39,25 +39,25 @@ def setupNetwork():
 
     print "[%d] Creating populations" % node
     # 1) excitatory populations
-    l0_exc_population = pynn.Population(num['l0_exc_neurons'], pynn.IF_curr_exp, cell_params, label="exc0")
-    #l0_exc_population.record()
-    l1_exc_population = pynn.Population(num['l1_exc_neurons'], pynn.IF_curr_exp, cell_params, label="exc1")
-    #l1_exc_population.record()
+    l0_exc_population = pynn.Population(num['l0_exc_neurons'], pynn.IF_cond_alpha, cell_params, label="exc0")
+    l0_exc_population.record()
+    l1_exc_population = pynn.Population(num['l1_exc_neurons'], pynn.IF_cond_alpha, cell_params, label="exc1")
+    l1_exc_population.record()
 
     # 2) inhibitory population
-    l0_inh_population = pynn.Population(num['l0_inh_neurons'], pynn.IF_curr_exp, cell_params, label="inh0")
-    #l0_inh_population.record()
-    l1_inh_population = pynn.Population(num['l1_inh_neurons'], pynn.IF_curr_exp, cell_params, label="inh1")
-    #l1_inh_population.record()
+    l0_inh_population = pynn.Population(num['l0_inh_neurons'], pynn.IF_cond_alpha, cell_params, label="inh0")
+    l0_inh_population.record()
+    l1_inh_population = pynn.Population(num['l1_inh_neurons'], pynn.IF_cond_alpha, cell_params, label="inh1")
+    l1_inh_population.record()
 
     # 3) connect exc. populations to neiboughring inh. population
-    inh_connector = pynn.FixedProbabilityConnector(0.6,weights=1.0)
+    inh_connector = pynn.FixedProbabilityConnector(0.6,weights=0.007)
     l0_exc_inh_projection = pynn.Projection(l0_exc_population,l0_inh_population,inh_connector)
     l1_exc_inh_projection = pynn.Projection(l1_exc_population,l1_inh_population,inh_connector)
 
-    exc_connector = pynn.FixedProbabilityConnector(0.6,weights=1.0,allow_self_connections=False)
-    l0_exc_exc_projection = pynn.Projection(l0_exc_population,l0_exc_population,exc_connector)
-    l1_exc_exc_projection = pynn.Projection(l1_exc_population,l1_exc_population,exc_connector)
+    exc_connector = pynn.FixedProbabilityConnector(0.6,weights=0.01,allow_self_connections=False)
+    #l0_exc_exc_projection = pynn.Projection(l0_exc_population,l0_exc_population,exc_connector)
+    #l1_exc_exc_projection = pynn.Projection(l1_exc_population,l1_exc_population,exc_connector)
 
     #for i in range(num['nodes']):
     #    exc_inh_projections.append(Projection(exc_populations[i],inh_population,inh_connector))
@@ -73,13 +73,13 @@ def setupNetwork():
     #            exc_exc_projections.append(Projection(exc_populations[i],exc_populations[j],exc_connector))
 
     # 4) connect inh. populations to exc. populations
-    connector = pynn.FixedProbabilityConnector(0.6,weights=-1.3)
+    connector = pynn.FixedProbabilityConnector(0.6,weights=0.024)
     l0_inh_exc_projection = pynn.Projection(l0_inh_population, l0_exc_population,connector,target="inhibitory")
     l1_inh_exc_projection = pynn.Projection(l1_inh_population, l1_exc_population,connector,target="inhibitory")
 
     # 5)
     input_population = pynn.Population(num['inputs'], pynn.SpikeSourcePoisson, {'rate': input_rate }, label="input")
-    #input_population.record()
+    input_population.record()
 
     # 6)
     stdp_model = pynn.STDPMechanism(
@@ -88,9 +88,10 @@ def setupNetwork():
         A_plus=0.01, A_minus=0.012)
     )
 
-    connector = pynn.AllToAllConnector(weights=pynn.RandomDistribution(distribution='uniform',parameters=[0.3,1.0],rng=rng))
+#    connector = pynn.AllToAllConnector(weights=pynn.RandomDistribution(distribution='uniform',parameters=[0.005,0.01],rng=rng))
+    connector = pynn.FixedProbabilityConnector(0.01,weights=0.01)
     input_projection = pynn.Projection(input_population, l0_exc_population, connector, rng=rng, synapse_dynamics=pynn.SynapseDynamics(slow=stdp_model))
-    #connector = pynn.FixedProbabilityConnector(0.6, weights=1.0)
+    connector = pynn.FixedProbabilityConnector(0.05, weights=0.01)
     l1_projection = pynn.Projection(l0_exc_population, l1_exc_population, connector, rng=rng, synapse_dynamics=pynn.SynapseDynamics(slow=stdp_model))
 
     return node,l0_exc_population,l1_exc_population,l0_inh_population,l1_inh_population,input_population,input_projection,l1_projection
@@ -151,11 +152,11 @@ if __name__ == "__main__":
         pickle.dump([input_projection.getWeights(format='array'),l1_projection.getWeights(format='array')],f)
 
     print "[%d] Writing spikes to disk" % node
-    #l0_exc_population.printSpikes('%s_exc_0.ras' % (file_stem,))
-    #l1_exc_population.printSpikes('%s_exc_1.ras' % (file_stem,))
-    #l0_inh_population.printSpikes('%s_inh_0.ras' % (file_stem,))
-    #l1_inh_population.printSpikes('%s_inh_1.ras' % (file_stem,))
-    #input_population.printSpikes('%s_input.ras' % (file_stem,))
+    l0_exc_population.printSpikes('%s_exc_0.ras' % (file_stem,))
+    l1_exc_population.printSpikes('%s_exc_1.ras' % (file_stem,))
+    l0_inh_population.printSpikes('%s_inh_0.ras' % (file_stem,))
+    l1_inh_population.printSpikes('%s_inh_1.ras' % (file_stem,))
+    input_population.printSpikes('%s_input.ras' % (file_stem,))
     with open('%s_labels.txt'%(file_stem,),'w') as f:
         for value in mat['y'][0:num['steps']-1]:
             f.write('%s\n'%(value[0]))

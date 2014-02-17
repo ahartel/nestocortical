@@ -22,7 +22,7 @@ def plot_section(offset,num,file_leaf,color):
     for j in range(num):
         plt.plot(spikes[j],np.ones(len(spikes[j]))*(offset+j),linestyle='',marker='|',color=color)
 
-if 0:
+if 1:
     fig = plt.figure()
     offset = 0
     #plot_section(offset,num['inputs'],'input',color_input)
@@ -42,6 +42,7 @@ if 0:
     offset += num['l0_inh_neurons']
     plt.axhline(y=offset)
     plot_section(offset,num['l1_inh_neurons'],'inh_1',color_inh)
+    offset += num['l1_inh_neurons']
 
     for i in range(1,num['steps']):
         plt.axvline(x=i*50,color='grey')
@@ -49,7 +50,7 @@ if 0:
     with open('%slabels.txt'%(file_stem,),'r') as f:
         cnt = 0
         for line in f.readlines(): 
-            plt.text(cnt*50+25,1000,line)
+            plt.text(cnt*50+25,offset,line)
             cnt += 1
 
 # weights

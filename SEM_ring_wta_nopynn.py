@@ -4,6 +4,7 @@ import nest.topology as tp
 import numpy as np
 from pylab import cm
 import matplotlib.pyplot as plt
+import pickle
 
 # This package generates 28 by 28 pixel images
 # It can also generate the input poisson spikes directly
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 import SEM_input
 
 last_events = [0,0,0,0]
+results_dir = './results'
+with_plot_weights = False
 
 seed = 764756387
 tshow = 40.0 # ms
@@ -18,7 +21,7 @@ tpaus = 10.0
 input_rate = 40.0 # Hz
 cell_params_lif = {
                'V_th'  :-55.0,  # mV
-               'g_L'     : 10.0,  # ms 
+               'g_L'     : 20.0,  # ms 
                'tau_syn_ex' :  2.0,  # ms
                'tau_syn_in' :  3.0,  # ms
                'tau_minus' : 20.0,
@@ -53,8 +56,9 @@ pp = pprint.PrettyPrinter()
 pp.pprint(GetDefaults('iaf_cond_exp'))
 pp.pprint(GetDefaults('aeif_cond_exp'))
 #pp.pprint(GetDefaults('aeif_cond_exp'))
-
-SetStatus([0],{'overwrite_files':True})
+#print GetStatus([0])
+SetStatus([0],{'overwrite_files':True, 'data_path':results_dir})
+#sys.exit(0)
 
 num = {}
 num['l0_exc_neurons'] = 4
@@ -65,19 +69,18 @@ num['l0_l1_maxneighbors'] = 4
 num['l0_inh_neurons'] = 4
 num['l1_inh_neurons'] = 5
 num['inputs'] = SEM_input.SEM_input_config['num_inputs']
-print num['inputs']
 num['inputs_maxneighbors'] = 4
-num['steps'] = 1000
+num['steps'] = 500
 num['steps_firing_rate_average'] = 10
 
 
 # input -> exc0
-w_inp_exc0_peak = 20.0
+w_inp_exc0_peak = 0.3
 sigma_inp_exc0 = num['inputs']/3.0
-w_inp_exc0_max = 50.0
-alpham_inp_exc0 = 1.0/200
+w_inp_exc0_max = 5.0
+alpham_inp_exc0 = 0.005/200
 alphap_inp_exc0 = alpham_inp_exc0*3
-w_inp_exc0_min = 5.0
+w_inp_exc0_min = 0.01
 
 # input -> inh0
 w_inp_inh0 = 0.3
@@ -89,8 +92,8 @@ w_exc0_exc1_peak = 0.005
 w_exc0_exc1_max = 0.005
 
 # exc0 -> inh0
-p_exc0_inh0 = 1.0
-w_exc0_inh0 = 40.0
+p_exc0_inh0 = 10.0
+w_exc0_inh0 = 50.0
 
 # exc0 -> exc0
 sigma_exc0_exc0 = 0.5
@@ -106,7 +109,7 @@ w_exc1_inh1 = 0.02
 
 # inh0 -> exc0
 p_inh0_exc0 = 1.0
-w_inh0_exc0 = -200.0
+w_inh0_exc0 = -100.0
 
 # inh1 -> exc1
 p_inh1_exc1 = 1.0
@@ -122,14 +125,13 @@ def plot_neurons(meters,k,m,variables,title):
         plt.grid()
         for i in range(k,m):
             #meter = tp.GetElement(meters,[i,0])
-            events = GetStatus([meters[i]])[0]['events'] 
+            events = GetStatus([meters[i]])[0]['events']
             t = events['times']
             plt.plot(t, events[var])
             plt.ylabel(var)
         start = start + 1
 
 def plot_weights(layer,target):
-    status = GetStatus(layer)[0]
     image_width = SEM_input.SEM_input_config['image_width']
     weights = np.zeros((image_width,image_width))
     for i in range(0,image_width):
@@ -146,6 +148,19 @@ def plot_weights(layer,target):
     plt.title(str(target))
     plt.imshow(weights)
     plt.colorbar()
+
+def dump_weights(layer,tag=''):
+    layer_status = GetStatus(layer)[0]
+    image_width = SEM_input.SEM_input_config['image_width']
+    weights = []
+    for i in range(0,image_width):
+        for j in range(0,image_width):
+            pixel = (i*image_width+j)*2
+            status = GetStatus(FindConnections(tp.GetElement(layer,[pixel,0])))
+            for s in status:
+                weights.append((i,j,s['target'],s['weight']))
+
+    pickle.dump(weights,open(results_dir+'/weights_'+str(layer_status['global_id'])+'_'+tag+'.dat','w'))
 
 def plot_layer(layer):
     tp.PlotLayer(layer, nodesize=50)
@@ -261,7 +276,7 @@ def setup_network():
     print "[ Projecting input -> excitatory population ]"
     # 7) input -> exc
     CopyModel('static_synapse','input_parrot', {'weight': 1.0})
-    CopyModel('rect_stdp_synapse','parrot_exc', {'tau_plus': 10.0,'alpha_minus':alpham_inp_exc0,'alpha_plus':alphap_inp_exc0,'Wmax':w_inp_exc0_max})
+    CopyModel('rect_stdp_synapse','parrot_exc', {'tau_plus': 20.0,'alpha_minus':alpham_inp_exc0,'alpha_plus':alphap_inp_exc0,'Wmax':w_inp_exc0_max})
     #CopyModel('static_synapse','parrot_exc')
     CopyModel('static_synapse','parrot_inh', {'weight': w_inp_inh0})
     input_parrot_dict = {
@@ -317,42 +332,56 @@ populations = setup_network()
 #    tgts = GetStatus(FindConnections(tp.GetElement(populations[1],[i,0])))
 #    print tgts
 #connPlot(populations[2],'input_model','aeif_cond_exp','input_exc','title')
-plot_weights(populations[3],2)
-plot_weights(populations[3],3)
-plot_weights(populations[3],4)
-plot_weights(populations[3],5)
+if with_plot_weights:
+    plot_weights(populations[3],2)
+    plot_weights(populations[3],3)
+    plot_weights(populations[3],4)
+    plot_weights(populations[3],5)
+
 
 # CONNECT READOUTS
-#connect_readouts(l0_exc_population,l0_inh_population,input_population)
-voltmeters = Create('multimeter',num['l0_exc_neurons']+num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in']})
+# voltmeters
+exc_voltmeters = Create('multimeter',num['l0_exc_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in']})
+inh_voltmeters = Create('multimeter',num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in']})
 
+tgts = [nd for nd in GetLeaves(populations[0])[0]] 
+for i in range(num['l0_exc_neurons']):
+    SetStatus([exc_voltmeters[i]],{'label':'mm_exc_'+str(i)})
+    DivergentConnect([exc_voltmeters[i]],[tgts[i]])
+tgts = [nd for nd in GetLeaves(populations[1])[0]] 
+for i in range(num['l0_inh_neurons']):
+    SetStatus([inh_voltmeters[i]],{'label':'mm_inh_'+str(i)})
+    DivergentConnect([inh_voltmeters[i]],[tgts[i]])
+
+# spike detectors
 exc_spikedetectors = Create('spike_detector',num['l0_exc_neurons'],{'precise_times':True,'to_file':True})
 exc_tgts = [nd for nd in GetLeaves(populations[0])[0]] 
 #for t in exc_tgts:
 #    print GetStatus([t])
 
 for n in range(num['l0_exc_neurons']):
-    SetStatus([exc_spikedetectors[n]],{'label':"exc_"+str(n)})
+    SetStatus([exc_spikedetectors[n]],{'label':"sd_exc_"+str(n)})
     ConvergentConnect([exc_tgts[n]],[exc_spikedetectors[n]])
 
 inh_spikedetectors = Create('spike_detector',num['l0_inh_neurons'],{'precise_times':True,'to_file':True})
 inh_tgts = [nd for nd in GetLeaves(populations[1])[0]] 
 for n in range(num['l0_inh_neurons']):
-    SetStatus([inh_spikedetectors[n]],{'label':"inh_"+str(n)})
+    SetStatus([inh_spikedetectors[n]],{'label':"sd_inh_"+str(n)})
     ConvergentConnect([inh_tgts[n]],[inh_spikedetectors[n]])
 
 
-tgts = [nd for nd in GetLeaves(populations[0])[0]] 
-for i in range(num['l0_exc_neurons']):
-    DivergentConnect([voltmeters[i]],[tgts[i]])
-tgts = [nd for nd in GetLeaves(populations[1])[0]] 
-for i in range(num['l0_inh_neurons']):
-    DivergentConnect([voltmeters[i+4]],[tgts[i]])
+inp_spikedetectors = Create('spike_detector',1,{'precise_times':True,'to_file':True})
+inp_tgts = [nd for nd in GetLeaves(populations[3])[0]]
+SetStatus([inp_spikedetectors[0]],{'label':"sd_inp_"+str(0)})
 
+for n in range(num['inputs']):
+    ConvergentConnect([inp_tgts[n]],[inp_spikedetectors[0]])
 
-# GENERATE INPUT
-inputs = [nd for nd in GetLeaves(populations[2])[0]] 
-#image = SEM_input.draw_image(SEM_input.SEM_input_config['centers'][i%4],SEM_input.SEM_input_config)
+# DUMP INITIAL WEIGHTS
+dump_weights(populations[3],'pre')
+
+# GENERATE INPUT AND SIMULATE
+inputs = [nd for nd in GetLeaves(populations[2])[0]]
 for i in range(num['steps']):
 
     image = SEM_input.draw_image(SEM_input.SEM_input_config['centers'][i%4],SEM_input.SEM_input_config)
@@ -386,10 +415,14 @@ for i in range(num['steps']):
     #    #else:                                              
     #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
 
-plot_weights(populations[3],2)
-plot_weights(populations[3],3)
-plot_weights(populations[3],4)
-plot_weights(populations[3],5)
-plt.show()
+if with_plot_weights:
+    plot_weights(populations[3],2)
+    plot_weights(populations[3],3)
+    plot_weights(populations[3],4)
+    plot_weights(populations[3],5)
+    plt.show()
+
+dump_weights(populations[3],'post')
+
 # PRINT
-PrintNetwork(depth=2)
+#PrintNetwork(depth=2)

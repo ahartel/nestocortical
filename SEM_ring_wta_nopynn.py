@@ -1,8 +1,8 @@
 import sys, copy
 from nest import *
 import nest.topology as tp
-import nest.voltage_trace as vt
-import nest.raster_plot as rp
+import numpy as np
+from pylab import cm
 import matplotlib.pyplot as plt
 
 # This package generates 28 by 28 pixel images
@@ -120,13 +120,24 @@ def plot_neurons(meters,k,m,variables,title):
             plt.ylabel(var)
         start = start + 1
 
-def plot_weights(layer):
+def plot_weights(layer,target):
     status = GetStatus(layer)[0]
-    weights = []
-    for i in range(status['topology']['columns']):
-        weights.extend(GetStatus(FindConnections(tp.GetElement(layer,[i,0])),'weight'))
+    image_width = SEM_input.SEM_input_config['image_width']
+    weights = np.zeros((image_width,image_width))
+    for i in range(0,image_width):
+        for j in range(0,image_width):
+            pixel = (i*image_width+j)*2
+            status = GetStatus(FindConnections(tp.GetElement(layer,[pixel,0])))
+            for s in status:
+                if s['target'] == target:
+                    weights[i][j] = s['weight']
+
     plt.figure()
-    plt.hist(weights,bins=100)
+    #plt.hist(weights,bins=100)
+    #cmap = plt.get_cmap('grey')
+    plt.title(str(target))
+    plt.imshow(weights)
+    plt.colorbar()
 
 def plot_layer(layer):
     tp.PlotLayer(layer, nodesize=50)
@@ -283,8 +294,6 @@ def setup_network():
 
 # CREATE
 populations = setup_network()
-# PRINT
-PrintNetwork(depth=2)
 #plot_layer(populations[2])
 #plot_layer(populations[3])
 #plt.figure() #ugly stack cleaning
@@ -297,7 +306,10 @@ PrintNetwork(depth=2)
 #    tgts = GetStatus(FindConnections(tp.GetElement(populations[1],[i,0])))
 #    print tgts
 #connPlot(populations[2],'input_model','aeif_cond_exp','input_exc','title')
-#plot_weights(populations[3])
+plot_weights(populations[3],2)
+plot_weights(populations[3],3)
+plot_weights(populations[3],4)
+plot_weights(populations[3],5)
 
 # CONNECT READOUTS
 #connect_readouts(l0_exc_population,l0_inh_population,input_population)
@@ -339,23 +351,23 @@ for i in range(num['steps']):
 
     Simulate(tpaus)
 
-# RESULTS
-#plot_weights(populations[3])
-plot_neurons(voltmeters,0,3,['V_m','g_ex','g_in'],'exc')
-#vt.from_device([voltmeters[0]])
-#vt.from_device([voltmeters[1]])
-#vt.from_device([voltmeters[2]])
-#vt.from_device([voltmeters[3]])
-plot_neurons(voltmeters,4,7,['V_m','g_ex'],'inh')
-#vt.from_device([voltmeters[4]])
-#vt.from_device([voltmeters[5]])
-#vt.from_device([voltmeters[6]])
-#vt.from_device([voltmeters[7]])
+    #for neuron in range(num['l0_exc_neurons']):
+    #    events_ex = GetStatus([spikedetectors[neuron]],'n_events')[0]
+    #    rate = (events_ex-last_events[neuron])/(tshow+tpaus)/1e-3
+    #    last_events[neuron] = events_ex
+    #    #print rate
+    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':(1+(rate-20.0)/20.0)*10.0})
+    #    #if rate < 20.0:
+    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':5.0})
+    #    #elif rate > 30.0:
+    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':15.0})
+    #    #else:                                              
+    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
 
-rp.from_device([spikedetectors[0]])
-plt.title('excitatory')
-rp.from_device([spikedetectors[1]])
-plt.title('inhibitory')
-##rp.from_device([spikedetectors[2]])
+plot_weights(populations[3],2)
+plot_weights(populations[3],3)
+plot_weights(populations[3],4)
+plot_weights(populations[3],5)
 plt.show()
-
+# PRINT
+PrintNetwork(depth=2)

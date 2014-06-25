@@ -10,12 +10,14 @@ spikes = {}
 
 for i,f in enumerate(sys.argv[1:]):
     print "processing file "+f
-    data = np.loadtxt(f)
+    data = np.loadtxt(f,delimiter='\t')
     for d in data:
         try:
             spikes[d[0]].append(d[1])
         except KeyError:
             spikes[d[0]] = []
+        except IndexError:
+            break
 
     for n,sp in spikes.items():
         plt.plot(sp,np.ones(len(sp))*n,'bo')

@@ -10,7 +10,7 @@ spikes = {}
 
 for i,f in enumerate(sys.argv[1:]):
     print "processing file "+f
-    data = np.loadtxt(f,delimiter='\t')
+    data = np.loadtxt(f)
     for d in data:
         try:
             spikes[d[0]].append(d[1])
@@ -22,7 +22,7 @@ for i,f in enumerate(sys.argv[1:]):
     for n,sp in spikes.items():
         plt.plot(sp,np.ones(len(sp))*n,'bo')
 
-    max_times.append(np.max(sp))
+        max_times.append(np.max(sp))
     #try:
     #    times = data[:,1]
     #    max_times[i] = np.max(times)

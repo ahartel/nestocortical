@@ -47,13 +47,13 @@ cell_params_adex = {
                 'gsl_error_tol': 1e-8,
     }
 
-SetDefaults('iaf_cond_exp',cell_params_lif)
+#SetDefaults('iaf_cond_exp',cell_params_lif)
 #SetDefaults('aeif_cond_exp',{'tau_syn_ex':1.5})
 #SetDefaults('aeif_cond_exp',{'tau_syn_in':1.5})
 #SetDefaults('aeif_cond_exp',cell_params_adex)
 import pprint
 pp = pprint.PrettyPrinter()
-pp.pprint(GetDefaults('iaf_cond_exp'))
+pp.pprint(GetDefaults('iaf_neuron'))
 pp.pprint(GetDefaults('aeif_cond_exp'))
 #pp.pprint(GetDefaults('aeif_cond_exp'))
 #print GetStatus([0])
@@ -75,15 +75,15 @@ num['steps_rate_average'] = 20
 
 
 # input -> exc0
-w_inp_exc0_peak = 0.15
+w_inp_exc0_peak = 8.0
 sigma_inp_exc0 = num['inputs']/3.0
-w_inp_exc0_max = 1.0
-alpham_inp_exc0 = 0.005/200
+w_inp_exc0_max = 20.0
+alpham_inp_exc0 = 0.015/200
 alphap_inp_exc0 = alpham_inp_exc0*3
-w_inp_exc0_min = 0.01
+w_inp_exc0_min = 0.1
 
 # input -> inh0
-w_inp_inh0 = 6.0
+w_inp_inh0 = 150.0
 sigma_inp_inh0 = num['inputs']/2.0
 
 # exc0 -> exc1
@@ -93,7 +93,7 @@ w_exc0_exc1_max = 0.005
 
 # exc0 -> inh0
 p_exc0_inh0 = 10.0
-w_exc0_inh0 = 3.0
+w_exc0_inh0 = 200.0
 
 # exc0 -> exc0
 sigma_exc0_exc0 = 0.5
@@ -109,7 +109,7 @@ w_exc1_inh1 = 0.02
 
 # inh0 -> exc0
 p_inh0_exc0 = 1.0
-w_inh0_exc0 = -100.0
+w_inh0_exc0 = -200.0
 
 # inh1 -> exc1
 p_inh1_exc1 = 1.0
@@ -183,7 +183,7 @@ def setup_network():
                                 'rows' : 1 ,
                                 'columns' : num['l0_exc_neurons'],
                                 'extent' : [ float(num['l0_exc_neurons']), 1.  ],
-                                'elements' : 'iaf_cond_exp',
+                                'elements' : 'iaf_neuron',
                                 'edge_wrap' : True } )
 
 
@@ -193,7 +193,7 @@ def setup_network():
                                 'rows' : 1,
                                 'columns' : num['l0_inh_neurons'],
                                 'extent' : [ float(num['l0_inh_neurons']), 1.  ] ,
-                                'elements' : 'iaf_cond_exp',
+                                'elements' : 'iaf_neuron',
                                 'edge_wrap' : True } )
 
 
@@ -316,7 +316,7 @@ def setup_network():
     #tp.ConnectLayers(parrot_population,l0_inh_population,parrot_inh_dict)
 
     # 7) input -> inh
-    CopyModel('poisson_generator','inh_bias_model',{'rate':150.0})
+    CopyModel('poisson_generator','inh_bias_model',{'rate':250.0})
     inh_bias_population =  tp.CreateLayer ({
                                 'rows' : 1 ,
                                 'columns' : num['inputs_inh_sources'],
@@ -364,8 +364,8 @@ if with_plot_weights:
 
 # CONNECT READOUTS
 # voltmeters
-exc_voltmeters = Create('multimeter',num['l0_exc_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in'],'to_memory':False})
-inh_voltmeters = Create('multimeter',num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in'],'to_memory':False})
+exc_voltmeters = Create('multimeter',num['l0_exc_neurons'],{'to_file':True,'record_from':['V_m'],'to_memory':False})
+inh_voltmeters = Create('multimeter',num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m'],'to_memory':False})
 
 tgts = [nd for nd in GetLeaves(populations[0])[0]] 
 for i in range(num['l0_exc_neurons']):
@@ -430,15 +430,15 @@ for i in range(num['steps']):
             events_ex = GetStatus([exc_spikedetectors[neuron]],'n_events')[0]
             rate = (events_ex-last_events[neuron])/((tshow+tpaus)*num['steps_rate_average']*1e-3)
             last_events[neuron] = events_ex
-            g_L = (1+(rate-25.0)/50.0)*10.0
+            g_L = 10.0/(1+(rate-25.0)/100.0)
             print rate,g_L
-            SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':g_L})
-            #if rate < 15.0:
-            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':5.0})
-            #elif rate > 35.0:
-            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':15.0})
-            #else:                                              
-            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
+            SetStatus([GetLeaves(populations[0])[0][neuron]],{'tau_m':g_L})
+    #        #if rate < 15.0:
+    #        #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':5.0})
+    #        #elif rate > 35.0:
+    #        #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':15.0})
+    #        #else:                                              
+    #        #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
 
     if i%100==0 and i>0:
         dump_weights(populations[3],'post')

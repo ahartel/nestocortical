@@ -21,7 +21,7 @@ tpaus = 10.0
 input_rate = 40.0 # Hz
 cell_params_lif = {
                'V_th'  :-55.0,  # mV
-               'g_L'     : 20.0,  # ms 
+               'g_L'     : 10.0,  # ms 
                'tau_syn_ex' :  2.0,  # ms
                'tau_syn_in' :  3.0,  # ms
                'tau_minus' : 20.0,
@@ -69,21 +69,21 @@ num['l0_l1_maxneighbors'] = 4
 num['l0_inh_neurons'] = 4
 num['l1_inh_neurons'] = 5
 num['inputs'] = SEM_input.SEM_input_config['num_inputs']
-num['inputs_maxneighbors'] = 4
-num['steps'] = 500
-num['steps_firing_rate_average'] = 10
+num['inputs_inh_sources'] = 4
+num['steps'] = 5000
+num['steps_rate_average'] = 20
 
 
 # input -> exc0
-w_inp_exc0_peak = 0.3
+w_inp_exc0_peak = 0.15
 sigma_inp_exc0 = num['inputs']/3.0
-w_inp_exc0_max = 5.0
+w_inp_exc0_max = 1.0
 alpham_inp_exc0 = 0.005/200
 alphap_inp_exc0 = alpham_inp_exc0*3
 w_inp_exc0_min = 0.01
 
 # input -> inh0
-w_inp_inh0 = 0.3
+w_inp_inh0 = 6.0
 sigma_inp_inh0 = num['inputs']/2.0
 
 # exc0 -> exc1
@@ -93,12 +93,12 @@ w_exc0_exc1_max = 0.005
 
 # exc0 -> inh0
 p_exc0_inh0 = 10.0
-w_exc0_inh0 = 50.0
+w_exc0_inh0 = 3.0
 
 # exc0 -> exc0
 sigma_exc0_exc0 = 0.5
 w_exc0_exc0_max = 0.5
-
+5
 # exc1 -> exc1
 sigma_exc1_exc1 = 7.
 w_exc1_exc1_max = 0.001
@@ -276,7 +276,7 @@ def setup_network():
     print "[ Projecting input -> excitatory population ]"
     # 7) input -> exc
     CopyModel('static_synapse','input_parrot', {'weight': 1.0})
-    CopyModel('rect_stdp_synapse','parrot_exc', {'tau_plus': 20.0,'alpha_minus':alpham_inp_exc0,'alpha_plus':alphap_inp_exc0,'Wmax':w_inp_exc0_max})
+    CopyModel('rect_stdp_synapse','parrot_exc', {'tau_plus': 10.0,'alpha_minus':alpham_inp_exc0,'alpha_plus':alphap_inp_exc0,'Wmax':w_inp_exc0_max})
     #CopyModel('static_synapse','parrot_exc')
     CopyModel('static_synapse','parrot_inh', {'weight': w_inp_inh0})
     input_parrot_dict = {
@@ -308,13 +308,36 @@ def setup_network():
             }
 
     parrot_inh_dict = copy.copy(parrot_exc_dict)
-    parrot_inh_dict['synapse_model'] = 'parrot_inh'
-    parrot_inh_dict['kernel'] = {'gaussian': {'p_center':1.0,'sigma':sigma_inp_exc0}}
+    #parrot_inh_dict['synapse_model'] = 'parrot_inh'
+    #parrot_inh_dict['kernel'] = {'gaussian': {'p_center':1.0,'sigma':sigma_inp_exc0}}
 
     tp.ConnectLayers(input_population,parrot_population,input_parrot_dict)
     tp.ConnectLayers(parrot_population,l0_exc_population,parrot_exc_dict)
     #tp.ConnectLayers(parrot_population,l0_inh_population,parrot_inh_dict)
 
+    # 7) input -> inh
+    CopyModel('poisson_generator','inh_bias_model',{'rate':150.0})
+    inh_bias_population =  tp.CreateLayer ({
+                                'rows' : 1 ,
+                                'columns' : num['inputs_inh_sources'],
+                                'extent' : [ float(num['inputs_inh_sources']), 1.  ],
+                                'elements' : 'inh_bias_model',
+                                'edge_wrap' : True } )
+
+    CopyModel('static_synapse','bias_inh', {'weight': w_inp_inh0})
+    inh_bias_dict = {
+                'connection_type' : 'convergent',
+                'mask': {
+                    'rectangular': {
+                        # this is intended: only connect to one neuron!
+                        'lower_left': [-0.5,-0.5],
+                        'upper_right':[0.5,0.5]
+                    }
+                },
+                'synapse_model': 'bias_inh',
+                'weights': w_inp_inh0,
+            }
+    tp.ConnectLayers(inh_bias_population,l0_inh_population,inh_bias_dict)
 
     return l0_exc_population,l0_inh_population,input_population,parrot_population
 
@@ -341,8 +364,8 @@ if with_plot_weights:
 
 # CONNECT READOUTS
 # voltmeters
-exc_voltmeters = Create('multimeter',num['l0_exc_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in']})
-inh_voltmeters = Create('multimeter',num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in']})
+exc_voltmeters = Create('multimeter',num['l0_exc_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in'],'to_memory':False})
+inh_voltmeters = Create('multimeter',num['l0_inh_neurons'],{'to_file':True,'record_from':['V_m','g_ex','g_in'],'to_memory':False})
 
 tgts = [nd for nd in GetLeaves(populations[0])[0]] 
 for i in range(num['l0_exc_neurons']):
@@ -354,7 +377,7 @@ for i in range(num['l0_inh_neurons']):
     DivergentConnect([inh_voltmeters[i]],[tgts[i]])
 
 # spike detectors
-exc_spikedetectors = Create('spike_detector',num['l0_exc_neurons'],{'precise_times':True,'to_file':True})
+exc_spikedetectors = Create('spike_detector',num['l0_exc_neurons'],{'precise_times':True,'to_file':True,'to_memory':True})
 exc_tgts = [nd for nd in GetLeaves(populations[0])[0]] 
 #for t in exc_tgts:
 #    print GetStatus([t])
@@ -363,7 +386,7 @@ for n in range(num['l0_exc_neurons']):
     SetStatus([exc_spikedetectors[n]],{'label':"sd_exc_"+str(n)})
     ConvergentConnect([exc_tgts[n]],[exc_spikedetectors[n]])
 
-inh_spikedetectors = Create('spike_detector',num['l0_inh_neurons'],{'precise_times':True,'to_file':True})
+inh_spikedetectors = Create('spike_detector',num['l0_inh_neurons'],{'precise_times':True,'to_file':True,'to_memory':False})
 inh_tgts = [nd for nd in GetLeaves(populations[1])[0]] 
 for n in range(num['l0_inh_neurons']):
     SetStatus([inh_spikedetectors[n]],{'label':"sd_inh_"+str(n)})
@@ -402,18 +425,23 @@ for i in range(num['steps']):
 
     Simulate(tpaus)
 
-    #for neuron in range(num['l0_exc_neurons']):
-    #    events_ex = GetStatus([spikedetectors[neuron]],'n_events')[0]
-    #    rate = (events_ex-last_events[neuron])/(tshow+tpaus)/1e-3
-    #    last_events[neuron] = events_ex
-    #    #print rate
-    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':(1+(rate-20.0)/20.0)*10.0})
-    #    #if rate < 20.0:
-    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':5.0})
-    #    #elif rate > 30.0:
-    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':15.0})
-    #    #else:                                              
-    #    #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
+    if i%num['steps_rate_average']==0 and i>0:
+        for neuron in range(num['l0_exc_neurons']):
+            events_ex = GetStatus([exc_spikedetectors[neuron]],'n_events')[0]
+            rate = (events_ex-last_events[neuron])/((tshow+tpaus)*num['steps_rate_average']*1e-3)
+            last_events[neuron] = events_ex
+            g_L = (1+(rate-25.0)/50.0)*10.0
+            print rate,g_L
+            SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':g_L})
+            #if rate < 15.0:
+            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':5.0})
+            #elif rate > 35.0:
+            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':15.0})
+            #else:                                              
+            #    SetStatus([GetLeaves(populations[0])[0][neuron]],{'g_L':10.0})
+
+    if i%100==0 and i>0:
+        dump_weights(populations[3],'post')
 
 if with_plot_weights:
     plot_weights(populations[3],2)

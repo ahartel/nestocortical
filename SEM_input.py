@@ -5,10 +5,10 @@ from matplotlib import cm
 
 SEM_input_config = {}
 SEM_input_config['image_width'] = 28
-SEM_input_config['num_inputs'] = SEM_input_config['image_width']*SEM_input_config['image_width']*2
+SEM_input_config['num_inputs'] = SEM_input_config['image_width']*SEM_input_config['image_width']
 SEM_input_config['num_neuron'] = 10
 # input image specs
-SEM_input_config['input_on_rate'] = 25.0 # Hz
+SEM_input_config['input_on_rate'] = 40.0 # Hz
 SEM_input_config['input_off_rate'] = 0.0 
 SEM_input_config['time_on_image'] = 40.0 # ms
 SEM_input_config['time_off_image'] = 10.0 # ms
@@ -31,6 +31,7 @@ def draw_image(center,config):
 			elif noise[i][j]>=(1-config['probability_noise_on']):
 				signal[i][j] = 1.0
 
+	#print len(signal[signal>0])
 	return signal
 
 def generate_input_spikes(image,config):

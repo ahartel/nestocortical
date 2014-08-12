@@ -11,5 +11,7 @@ for i,f in enumerate(sys.argv[1:]):
     for i in range(traces):
         plt.subplot(traces*100+10+i+1)
         plt.plot(times,data[:,i+2])
+    plt.title(f)
+    plt.grid()
 
 plt.show()

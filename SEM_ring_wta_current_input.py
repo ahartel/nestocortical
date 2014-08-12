@@ -14,18 +14,23 @@ import SEM_input
 last_events = [0,0,0,0]
 results_dir = './results'
 with_plot_weights = False
+with_homeostatis = False
 
 seed = 764756387
 tshow = 40.0 # ms
 tpaus = 10.0
 input_rate = 40.0 # Hz
-cell_params_lif = {
+cell_params_lif_cond = {
                'V_th'  :-55.0,  # mV
                'g_L'     : 10.0,  # ms 
                'tau_syn_ex' :  2.0,  # ms
                'tau_syn_in' :  3.0,  # ms
                'tau_minus' : 20.0,
                't_ref':5.0,
+            }
+
+cell_params_lif = {
+               'tau_m'     : 5.0,  # ms 
             }
 
 # values taken from Naud et al. 2008
@@ -47,9 +52,8 @@ cell_params_adex = {
                 'gsl_error_tol': 1e-8,
     }
 
-#SetDefaults('iaf_cond_exp',cell_params_lif)
-#SetDefaults('aeif_cond_exp',{'tau_syn_ex':1.5})
-#SetDefaults('aeif_cond_exp',{'tau_syn_in':1.5})
+#SetDefaults('iaf_cond_exp',cell_params_lif_cond)
+SetDefaults('iaf_neuron',cell_params_lif)
 #SetDefaults('aeif_cond_exp',cell_params_adex)
 import pprint
 pp = pprint.PrettyPrinter()
@@ -75,12 +79,12 @@ num['steps_rate_average'] = 20
 
 
 # input -> exc0
-w_inp_exc0_peak = 8.0
+w_inp_exc0_peak = 180.0
 sigma_inp_exc0 = num['inputs']/3.0
-w_inp_exc0_max = 20.0
-alpham_inp_exc0 = 0.015/200
-alphap_inp_exc0 = alpham_inp_exc0*3
-w_inp_exc0_min = 0.1
+w_inp_exc0_max = 250.0
+alpham_inp_exc0 = 0.01/200
+alphap_inp_exc0 = alpham_inp_exc0*2
+w_inp_exc0_min = 1.0
 
 # input -> inh0
 w_inp_inh0 = 150.0
@@ -93,12 +97,12 @@ w_exc0_exc1_max = 0.005
 
 # exc0 -> inh0
 p_exc0_inh0 = 10.0
-w_exc0_inh0 = 200.0
+w_exc0_inh0 = 1000.0
 
 # exc0 -> exc0
 sigma_exc0_exc0 = 0.5
 w_exc0_exc0_max = 0.5
-5
+
 # exc1 -> exc1
 sigma_exc1_exc1 = 7.
 w_exc1_exc1_max = 0.001
@@ -109,7 +113,7 @@ w_exc1_inh1 = 0.02
 
 # inh0 -> exc0
 p_inh0_exc0 = 1.0
-w_inh0_exc0 = -200.0
+w_inh0_exc0 = -1000.0
 
 # inh1 -> exc1
 p_inh1_exc1 = 1.0
@@ -155,7 +159,7 @@ def dump_weights(layer,tag=''):
     weights = []
     for i in range(0,image_width):
         for j in range(0,image_width):
-            pixel = (i*image_width+j)*2
+            pixel = i*image_width+j
             status = GetStatus(FindConnections(tp.GetElement(layer,[pixel,0])))
             for s in status:
                 weights.append((i,j,s['target'],s['weight']))
@@ -257,7 +261,7 @@ def setup_network():
 
     print "[ Creating input population ]"
     # 6) create input population
-    CopyModel('poisson_generator','input_model',{'rate':40.0})
+    CopyModel('poisson_generator','input_model',{'rate':0.0})
     input_population =  tp.CreateLayer ({
                                 'rows' : 1 ,
                                 'columns' : num['inputs'],
@@ -316,7 +320,7 @@ def setup_network():
     #tp.ConnectLayers(parrot_population,l0_inh_population,parrot_inh_dict)
 
     # 7) input -> inh
-    CopyModel('poisson_generator','inh_bias_model',{'rate':250.0})
+    CopyModel('poisson_generator','inh_bias_model',{'rate':500.0})
     inh_bias_population =  tp.CreateLayer ({
                                 'rows' : 1 ,
                                 'columns' : num['inputs_inh_sources'],
@@ -412,25 +416,26 @@ for i in range(num['steps']):
     # prepare input population firing rates
     for j in range(SEM_input.SEM_input_config['image_width']):
         for k in range(SEM_input.SEM_input_config['image_width']):
-            SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2]],{'rate': SEM_input.SEM_input_config['input_on_rate'] if (image[j][k] > 0.0) else SEM_input.SEM_input_config['input_off_rate']})
-            SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2+1]],{'rate': SEM_input.SEM_input_config['input_on_rate'] if (image[j][k]<1.0) else SEM_input.SEM_input_config['input_off_rate']})
+            this_rate = SEM_input.SEM_input_config['input_on_rate'] if (image[j][k] > 0.0) else SEM_input.SEM_input_config['input_off_rate']
+            SetStatus([inputs[j*SEM_input.SEM_input_config['image_width']+k]],{'rate': this_rate})
+            #SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2+1]],{'rate': SEM_input.SEM_input_config['input_on_rate'] if (image[j][k]<1.0) else SEM_input.SEM_input_config['input_off_rate']})
 
     print "[Running simulation step %d]" % (i)
     Simulate(tshow)
 
     for j in range(SEM_input.SEM_input_config['image_width']):
         for k in range(SEM_input.SEM_input_config['image_width']):
-            SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2]],{'rate': 0.0})
-            SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2+1]],{'rate': 0.0})
+            SetStatus([inputs[j*SEM_input.SEM_input_config['image_width']+k]],{'rate': 0.0})
+            #SetStatus([inputs[2*j*SEM_input.SEM_input_config['image_width']+k*2+1]],{'rate': 0.0})
 
     Simulate(tpaus)
 
-    if i%num['steps_rate_average']==0 and i>0:
+    if i%num['steps_rate_average']==0 and i>0 and with_homeostatis:
         for neuron in range(num['l0_exc_neurons']):
             events_ex = GetStatus([exc_spikedetectors[neuron]],'n_events')[0]
             rate = (events_ex-last_events[neuron])/((tshow+tpaus)*num['steps_rate_average']*1e-3)
             last_events[neuron] = events_ex
-            g_L = 10.0/(1+(rate-25.0)/100.0)
+            g_L = 5.0/(1+(rate-20.0)/100.0)
             print rate,g_L
             SetStatus([GetLeaves(populations[0])[0][neuron]],{'tau_m':g_L})
     #        #if rate < 15.0:

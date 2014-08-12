@@ -10,12 +10,13 @@ spikes = {}
 
 for i,f in enumerate(sys.argv[1:]):
     print "processing file "+f
-    data = np.loadtxt(f)
+    data = np.loadtxt(f,ndmin=2,usecols=(0,1))
     for d in data:
         try:
             spikes[d[0]].append(d[1])
         except KeyError:
             spikes[d[0]] = []
+            spikes[d[0]].append(d[1])
         except IndexError:
             break
 
@@ -38,4 +39,5 @@ for x in range(0,int(max(max_times))+1,50):
 
 plt.xlim(0,np.max(max_times))
 #plt.ylim(min_neuron_number-1,max_neuron_number+1)
+plt.title(sys.argv[1:])
 plt.show()

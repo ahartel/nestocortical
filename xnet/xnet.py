@@ -1,4 +1,5 @@
 import math, sys
+import AER
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -117,6 +118,16 @@ class Synapse:
 		elif self.__w < self.__wmin:
 			self.__w = self.__wmin
 
+class DVSLoader:
+	def __init__(self,filename):
+		self.__data,self.__time = AER.load_AER(filename)
+		self.__pointer = 0
+
+	def get_events(self):
+		while self.__pointer <= len(self.__data):
+			self.__pointer += 1
+			yield self.__time[self.__pointer-1],self.__data[self.__pointer-1]
+
 class DVS:
 	def __init__(self,image_width=28,image_height=28):
 		self.__image_width = image_width
@@ -176,7 +187,7 @@ if __name__  == '__main__':
             image_width=image_width,
             image_height=image_height
         )
-	neurons = Neurons_softinhibit(num_neurons)
+	neurons = Neurons(num_neurons)
 	synapses = [[Synapse(i*num_dvs_addresses+j,neurons,j) for j in range(num_neurons)] for i in range(num_dvs_addresses)]
 
 

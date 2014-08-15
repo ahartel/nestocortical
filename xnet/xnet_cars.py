@@ -1,4 +1,5 @@
-import sys,xnet
+import sys,pickle
+import xnet
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,17 +15,19 @@ neurons_first  = xnet.Neurons(num_neurons_first)
 
 synapses = [[xnet.Synapse(i*num_dvs_addresses+j,neurons_first,j) for j in range(num_neurons_first)] for i in range(num_dvs_addresses)]
 
-cnt = 0
+#cnt = 0
 for event in dvs.get_events():
-	if cnt == 10000:
-		break
+	#if cnt == 1000000:
+	#	break
 
 	time = event[0]
 	for synapse in synapses[event[1]]:
 		synapse.pre(time)
-	cnt += 1
+	#cnt += 1
 
 spikes = neurons_first.get_spikes()
+pickle.dump(spikes,open('spikes.dat','wb'))
+
 for n in range(num_neurons_first):
 	#if len(spikes[n]) > 0:
 	#	print n,len(spikes[n])

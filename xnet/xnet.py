@@ -126,7 +126,7 @@ class DVSLoader:
 	def get_events(self):
 		while self.__pointer <= len(self.__data):
 			self.__pointer += 1
-			yield self.__time[self.__pointer-1],self.__data[self.__pointer-1]
+			yield float(self.__time[self.__pointer-1])/1000.0,self.__data[self.__pointer-1]
 
 class DVS:
 	def __init__(self,image_width=28,image_height=28):

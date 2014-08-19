@@ -5,22 +5,26 @@
 #include <math.h>
 #include <iostream>
 
+#include "xnet_types.h"
+
 using namespace std;
+
+class Synapse;
 
 class Neurons
 {
 	private:
 		vector<vector<float>> spikes;
-		vector<vector<void(*)(float)>> synapses;
+		vector<vector<Synapse*>> synapses;
 		vector<vector<tuple<float,float,float>>> membrane_record;
 		vector<float> u;
-		vector<float> tlast_update, tlast_spike;
+		vector<Time_t> tlast_update, tlast_spike;
 		int tau, Vt, num;
 		float Tinhibit, Trefrac, winhibit;
 		bool record_membrane;
 
 	public:
-	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0)
+	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0),synapses(num)
 	{
 		this->tau = 5; //ms
 		this->Vt = 10000; //unit?
@@ -41,7 +45,7 @@ class Neurons
 		}
 	}
 
-	void evolve(int neuron_number, float weight, float t)
+	void evolve(int neuron_number, float weight, Time_t t)
 	{
 		if (t > (*max_element(tlast_spike.begin(),tlast_spike.end()) + this->Tinhibit))
 		{
@@ -67,11 +71,7 @@ class Neurons
 		}
 	}
 
-	void update_synapses(int neuron_number, float t)
-	{
-		for (auto syn : this->synapses[neuron_number])
-			syn(t);
-	}
+	void update_synapses(int neuron_number, Time_t t);
 
 	vector<vector<float>> get_spikes() const {
 		return this->spikes;
@@ -82,12 +82,12 @@ class Neurons
 		return this->membrane_record;
 	}
 
-	void register_synapse(int neuron, void(*synapse_update)(float))
+	void register_synapse(unsigned int neuron, Synapse* synapse)
 	{
-		this->synapses[neuron].push_back(synapse_update);
+		this->synapses[neuron].push_back(synapse);
 	}
 
-	vector<void(*)(float)> get_synapses(int neuron) const
+	vector<Synapse*> get_synapses(int neuron) const
 	{
 		return this->synapses[neuron];
 	}
@@ -117,12 +117,35 @@ class Neurons
 //
 //		if self.__record_membrane:
 //			self.__membrane_record[neuron_number].append((t,self.__u[neuron_number],weight))
-//
-//class Synapse:
+
+class Synapse
+{
+	private:
+		Neurons& neurons;
+		unsigned int psn, id;
+		float w, wmin, wmax;
+		Time_t last_pre_spike;
+		float alpha_minus, alpha_plus;
+		Time_t TLTP;
+
+	public:
+
+	Synapse(unsigned int i, Neurons& neurons_ref, unsigned int post_neuron) :
+			neurons(neurons_ref),
+			psn(post_neuron),
+			id(i),
+			last_pre_spike(0)
+	{
+		w = 800; // TODO: should be normally distributed with mu=800, sigma=160
+		TLTP = 2; // ms
+		alpha_minus = 100; // TODO: should be normally distributed with mu=100, std=20
+		alpha_plus  = 50; // TODO: should be normally distributed with mu=50, std=10
+		wmin = 1.0; // TODO: should be normally distributed with mu=1.0, std=0.2
+		wmax = 1000.0; // TODO: should be normally distributed with mu=1000, std=200
+
+		register_at_neuron();
+	}
 //	def __init__(self,id,neurons,post_neuron):
-//		self.__id = id
-//		self.__neurons = neurons
-//		self.__psn = post_neuron
 //		self.__w = np.random.normal(800,160)
 //		self.__last_pre_spike = 0
 //		self.__TLTP = 2 # ms
@@ -132,15 +155,40 @@ class Neurons
 //		self.__wmax = np.random.normal(1000,200)
 //
 //		self.register_at_neuron()
-//
+
+	void pre(Time_t t)
+	{
+		last_pre_spike = t;
+		neurons.evolve(psn,w,t);
+	}
 //	def pre(self,t):
 //		#print 'sending spike to neuron ',self.__psn,' with weight ',self.__w
 //		self.__last_pre_spike = t
 //		self.__neurons.evolve(self.__psn,self.__w,t)
-//
+
+	void register_at_neuron()
+	{
+		neurons.register_synapse(psn, this);
+	}
 //	def register_at_neuron(self):
 //		self.__neurons.register_synapse(self.__psn,self.update)
-//
+
+	void update(Time_t t)
+	{
+		if (t-last_pre_spike > TLTP && w > wmin)
+		{
+			w -= alpha_minus;
+		}
+		else if (t-last_pre_spike <= TLTP && w < wmax)
+		{
+			w += alpha_plus;
+		}
+
+		if (w > wmax)
+			w = wmax;
+		else if (w < wmin)
+			w = wmin;
+	}
 //	def update(self,t):
 //		if t-self.__last_pre_spike > self.__TLTP and self.__w > self.__wmin:
 //			self.__w -= self.__alpha_minus
@@ -151,7 +199,15 @@ class Neurons
 //			self.__w = self.__wmax
 //		elif self.__w < self.__wmin:
 //			self.__w = self.__wmin
-//
+};
+
+void Neurons::update_synapses(int neuron_number, Time_t t)
+{
+	for (auto syn : this->synapses[neuron_number])
+		syn->update(t);
+}
+
+
 class DVS
 {
 private:
@@ -260,8 +316,14 @@ int main()
 	};
 
 //	neurons = Neurons_softinhibit(num_neurons)
-//	synapses = [[Synapse(i*num_dvs_addresses+j,neurons,j) for j in range(num_neurons)] for i in range(num_dvs_addresses)]
-
+	Neurons neurons(num_neurons);
+	vector<vector<Synapse>> synapses;
+	for (int i=0; i<num_dvs_addresses; ++i)
+	{
+		synapses.push_back({});
+		for (int j=0; j<num_neurons; ++j)
+			synapses.back().push_back(Synapse(i*num_dvs_addresses+j,neurons,j));
+	}
 
 	float time = 0;
 	for (int rep=0; rep<num_repetitions; ++rep)
@@ -284,20 +346,24 @@ int main()
 //				#plt.figure()
 //				#plt.imshow(image)
 				auto image_diff = dvs.calculate_spikes(image);
-				for (auto row : image_diff)
+				for (int row=0; row<image_height; ++row)
 				{
-					for (auto col : row)
+					for (int col=0; col<image_width; ++col)
 					{
-						if (col > 0)
+						if (image_diff[row][col] > 0)
 						{
 							on_pixels += 1;
+							for (Synapse synapse : synapses[(row*image_width+col)*2])
+								synapse.pre(time);
 //							for synapse in synapses[(row*image_width+col)*2]:
 //								synapse.pre(time)
 //							#print row,col,pixel
 						}
-						else if (col < 0)
+						else if (image_diff[col][row] < 0)
 						{
 							off_pixels += 1;
+							for (Synapse synapse : synapses[(row*image_width+col)*2+1])
+								synapse.pre(time);
 //							for synapse in synapses[(row*image_width+col)*2+1]:
 //								synapse.pre(time)
 //							#print row,col,pixel

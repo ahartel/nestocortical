@@ -24,7 +24,7 @@ class Neurons
 		bool record_membrane;
 
 	public:
-	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0),synapses(num)
+	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0), synapses(num), spikes(num)
 	{
 		this->tau = 5; //ms
 		this->Vt = 10000; //unit?

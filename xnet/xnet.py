@@ -12,7 +12,7 @@ class Neurons:
 		self.__Trefrac = 10.0 #ms
 		self.__winhibit = 500.0 #unit?
 		self.__u      = [0 for i in range(num)]
-		self.__spikes = [[] for i in range(num)]
+		self.__spikes = []
 		self.__synapses = [[] for i in range(num)]
 		self.__tlast_update = [0 for i in range(num)]
 		self.__tlast_spike  = [0 for i in range(num)]
@@ -32,7 +32,7 @@ class Neurons:
 
 				if self.__u[neuron_number] > self.__Vt:
 					self.__tlast_spike[neuron_number] = t
-					self.__spikes[neuron_number].append(t)
+					self.__spikes.append((neuron_number,t))
 					self.update_synapses(neuron_number,t)
 					for n in range(self.__num):
 						self.__u[n] = 0
@@ -152,11 +152,11 @@ class BallCamera:
 
 	def generate_image(self,t):
 		ball_center = np.array([math.cos(self.__angle),math.sin(self.__angle)])*self.__velocity*(t-self.__start_time) - self.__ball_start
-		image = np.zeros((self.image_width,self.image_height))
+		image = np.zeros((self.image_height,self.image_width))
 		for x in range(self.image_width):
 			for y in range(self.image_height):
 				if self.distance(x,y,ball_center) < self.__ball_radius:
-					image[x][y] = 1.0
+					image[y][x] = 1.0
 
 		return image
 
@@ -199,7 +199,7 @@ if __name__  == '__main__':
 			for t in np.arange(0.0,100.0,dt):
 				on_pixels = 0
 				off_pixels = 0
-				#print '-------- time = ' + str(time) + ' ----------'
+				print '-------- time = ' + str(time) + ' ----------'
 				image = cam.generate_image(time)
 				#plt.figure()
 				#plt.imshow(image)
@@ -218,20 +218,16 @@ if __name__  == '__main__':
 							#print row,col,pixel
 
 				#print image_diff
-				#print on_pixels, off_pixels
+				print "ON: ",on_pixels," OFF: ", off_pixels
 				time += dt
 			# add a time-step of 100 ms between each run
 			time += 100.0
 
 	spikes = neurons.get_spikes()
-	for n in range(num_neurons):
-		#if len(spikes[n]) > 0:
-		#	print n,len(spikes[n])
-		plt.plot(spikes[n],np.ones(len(spikes[n]))*n,'o')
-	for n in range(num_repetitions*8*2):
-		plt.axvline(n*100)
-
-	pickle.dump(spikes,open('spikes.dat','wb'))
+	#pickle.dump(spikes,open('spikes.dat','wb'))
+	with open("spikes_python.dat", "w") as f:
+		for spike in spikes:
+			f.write(str(spike[0])+","+str(spike[1])+'\n')
 
 	#plt.figure()
 	#record = neurons.get_membrane_potential()
@@ -245,6 +241,6 @@ if __name__  == '__main__':
 	#		membranes.append(tpl[1])
 	#	plt.plot(times,membranes)
 
-	plt.show()
+	#plt.show()
 
 # vim: set noexpandtab

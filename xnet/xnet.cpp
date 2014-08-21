@@ -4,8 +4,11 @@
 #include <algorithm>
 #include <math.h>
 #include <iostream>
-
+#include <fstream>
+#include <random>
 #include "xnet_types.h"
+
+#define EPSILON 0.0001
 
 using namespace std;
 
@@ -14,17 +17,18 @@ class Synapse;
 class Neurons
 {
 	private:
-		vector<vector<float>> spikes;
+		vector<tuple<float,float>> spikes;
 		vector<vector<Synapse*>> synapses;
 		vector<vector<tuple<float,float,float>>> membrane_record;
 		vector<float> u;
 		vector<Time_t> tlast_update, tlast_spike;
-		int tau, Vt, num;
+		float tau, Vt;
+		int num;
 		float Tinhibit, Trefrac, winhibit;
 		bool record_membrane;
 
 	public:
-	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0), synapses(num), spikes(num)
+	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0), synapses(num)
 	{
 		this->tau = 5; //ms
 		this->Vt = 10000; //unit?
@@ -47,23 +51,23 @@ class Neurons
 
 	void evolve(int neuron_number, float weight, Time_t t)
 	{
-		if (t > (*max_element(tlast_spike.begin(),tlast_spike.end()) + this->Tinhibit))
+		if (t > (*max_element(tlast_spike.begin(),tlast_spike.end()) + Tinhibit) || t < EPSILON)
 		{
-			float last_spike = this->tlast_spike[neuron_number];
-			if ((t-last_spike) > this->Trefrac)
+			float last_spike = tlast_spike[neuron_number];
+			if (((t-last_spike) > Trefrac) || t < EPSILON)
 			{
-				float last_t = this->tlast_update[neuron_number];
-				float last_u = this->u[neuron_number];
-				this->u[neuron_number] = last_u*exp(-(t-last_t)/this->tau) + weight;
-				this->tlast_update[neuron_number] = t;
+				float last_t = tlast_update[neuron_number];
+				float last_u = u[neuron_number];
+				u[neuron_number] = last_u*exp(-(t-last_t)/tau) + weight;
+				tlast_update[neuron_number] = t;
 
-				if (this->u[neuron_number] > this->Vt)
+				if (u[neuron_number] > Vt)
 				{
-					this->tlast_spike[neuron_number] = t;
-					this->spikes[neuron_number].push_back(t);
+					tlast_spike[neuron_number] = t;
+					spikes.push_back(make_tuple(neuron_number,t));
 					update_synapses(neuron_number,t);
-					for (int n=0; n< this->num; ++n)
-						this->u[n] = 0;
+					for (int n=0; n < num; ++n)
+						u[n] = 0;
 				}
 			}
 			if (this->record_membrane)
@@ -73,7 +77,7 @@ class Neurons
 
 	void update_synapses(int neuron_number, Time_t t);
 
-	vector<vector<float>> get_spikes() const {
+	vector<tuple<float,float>> get_spikes() const {
 		return this->spikes;
 	}
 
@@ -128,6 +132,7 @@ class Synapse
 		float alpha_minus, alpha_plus;
 		Time_t TLTP;
 
+
 	public:
 
 	Synapse(unsigned int i, Neurons& neurons_ref, unsigned int post_neuron) :
@@ -145,6 +150,30 @@ class Synapse
 
 		register_at_neuron();
 	}
+
+	Synapse(unsigned int i,
+		    Neurons& neurons_ref,
+		    unsigned int post_neuron,
+		    float weight=800.0,
+		    float aminus=100.0,
+		    float aplus=50.0,
+			float wmin_=1.0,
+			float wmax_=1000.0
+		) : neurons(neurons_ref),
+			psn(post_neuron),
+			id(i),
+			last_pre_spike(0),
+			w(weight),
+			alpha_minus(aminus),
+			alpha_plus(aplus),
+			wmin(wmin_),
+			wmax(wmax_)
+	{
+		TLTP = 2; // ms
+
+		register_at_neuron();
+	}
+
 //	def __init__(self,id,neurons,post_neuron):
 //		self.__w = np.random.normal(800,160)
 //		self.__last_pre_spike = 0
@@ -223,12 +252,12 @@ public:
 
 	vector<vector<int>> calculate_spikes(vector<vector<bool>> image)
 	{
-		vector<vector<int>> image_diff {image_height,vector<int>(image_width,0) };
+		vector<vector<int>> image_diff (image_height,vector<int>(image_width,0) );
 		for (int x=0; x<image_width; ++x)
 		{
 			for (int y=0; y<image_height; ++y)
 			{
-				image_diff[x][y] = int(image[x][y]) - int(previous_image[x][y]);
+				image_diff[y][x] = int(image[y][x]) - int(previous_image[y][x]);
 			}
 		}
 		previous_image = image;
@@ -241,7 +270,7 @@ class BallCamera
 private:
 	int image_width, image_height;
 	float angle, velocity, ball_radius, start_time;
-	vector<float> ball_start;
+	vector<double> ball_start;
 
 public:
 	BallCamera(float angle, float velocity, float radius, int image_width=28, int image_height=28)
@@ -258,29 +287,31 @@ public:
 	vector<vector<bool>> generate_image(float t)
 	{
 		cout << ball_start[0] << "," << ball_start[1] << endl;
-		vector<float> ball_center = {cos(angle)*velocity*(t-start_time) - ball_start[0],sin(angle)*velocity*(t-start_time) - ball_start[1]};
+		vector<double> ball_center = {
+			cos(angle)*velocity*(t-start_time) - ball_start[0],
+			sin(angle)*velocity*(t-start_time) - ball_start[1]
+		};
 		cout << ball_center[0] << "," << ball_center[1] << endl;
-		vector<vector<bool>> image{image_height,vector<bool>(image_width,false) };
-		unsigned int cnt = 0;
+		vector<vector<bool>> image(image_height,vector<bool>(image_width,false) );
+		//unsigned int cnt = 0;
 		for (int x=0; x<image_width; ++x)
 		{
 			for (int y=0; y<image_height; ++y)
 			{
 				if (distance(x,y,ball_center) < ball_radius)
 				{
-					++cnt;
-					image[x][y] = true;
+					//++cnt;
+					image[y][x] = true;
 				}
 			}
 		}
-		cout << cnt << endl;
 		return image;
 	}
 
-	float distance(float x, float y, vector<float> center)
+	float distance(float x, float y, vector<double> center)
 	{
 		float dist = sqrt(pow(x-center[0],2)+pow(y-center[1],2));
-		cout << dist << endl;
+		//cout << dist << endl;
 		return dist;
 	}
 
@@ -304,7 +335,7 @@ int main()
 	int num_neurons = 48;
 	int num_dvs_addresses = 2 * image_width * image_height;
 	float dt = 1.0;
-	int	num_repetitions = 1;
+	int	num_repetitions = 100;
 
 	DVS dvs(image_width,image_height);
 	BallCamera cam {
@@ -317,34 +348,51 @@ int main()
 
 //	neurons = Neurons_softinhibit(num_neurons)
 	Neurons neurons(num_neurons);
+
+	std::default_random_engine generator;
+	std::normal_distribution<float> weight_distribution(800.0,160.0);
+	std::normal_distribution<float> am_distribution(100.0,20.0);
+	std::normal_distribution<float> ap_distribution(50.0,10.0);
+	std::normal_distribution<float> wmin_distribution(1.0,0.2);
+	std::normal_distribution<float> wmax_distribution(1000.0,200.0);
+
 	vector<vector<Synapse>> synapses;
 	for (int i=0; i<num_dvs_addresses; ++i)
 	{
 		synapses.push_back({});
 		for (int j=0; j<num_neurons; ++j)
-			synapses.back().push_back(Synapse(i*num_dvs_addresses+j,neurons,j));
+			synapses.back().push_back(
+				Synapse(i*num_dvs_addresses+j,neurons,j,
+						weight_distribution(generator),
+						am_distribution(generator),
+						ap_distribution(generator),
+						wmin_distribution(generator),
+						wmax_distribution(generator)
+						));
 	}
 
 	float time = 0;
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
-//		print 'rep ',rep
+		cout << "rep " << rep << endl;
 		for (float angle=0; angle<360; angle+=45)
 		{
+			cout << "angle " << angle << endl;
 			cam.reset_and_angle(angle,time);
-			for (float t=0; t<100.0; t=+dt)
+			for (float t=0.0; t<100.0; t+=dt)
 			{
 				int on_pixels = 0;
 				int off_pixels = 0;
 				auto image = cam.generate_image(time);
-				for (auto row : image)
-				{
-					cout << row.size() << endl;
-					for (auto col : row)
-						cout << col << endl;
-				}
-//				#plt.figure()
-//				#plt.imshow(image)
+				//for (auto row : image)
+				//{
+				//	cout << row.size() << endl;
+				//	for (auto col : row)
+				//	{
+				//		cout << col << endl;
+				//	}
+				//}
+
 				auto image_diff = dvs.calculate_spikes(image);
 				for (int row=0; row<image_height; ++row)
 				{
@@ -373,9 +421,9 @@ int main()
 //				#print image_diff
 				if (on_pixels > 0 || off_pixels > 0)
 				{
-					cout << "-------- time = " << time << " ----------" << endl;
-					cout << on_pixels << "," << off_pixels << endl;
+					cout << "ON: " << on_pixels << ", OFF: " << off_pixels << endl;
 				}
+				cout << "-------- time = " << time << " ----------" << endl;
 				time += dt;
 			}
 			// add a time-step of 100 ms between each run
@@ -383,8 +431,13 @@ int main()
 		}
 	}
 
-//	spikes = neurons.get_spikes()
-//	for n in range(num_neurons):
+	auto spikes = neurons.get_spikes();
+	ofstream file("spikes.dat",ios::out);
+	for (auto pair : spikes)
+	{
+		file << get<0>(pair) << "," << get<1>(pair) << "\n";
+	}
+	file.close();
 //		#if len(spikes[n]) > 0:
 //		#	print n,len(spikes[n])
 //		plt.plot(spikes[n],np.ones(len(spikes[n]))*n,'o')

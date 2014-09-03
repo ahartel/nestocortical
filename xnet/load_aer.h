@@ -1,3 +1,5 @@
+#pragma once
+
 #include <tuple>
 #include <vector>
 #include <fstream>
@@ -6,15 +8,16 @@
 
 using namespace std;
 
-tuple<vector<unsigned int>,vector<unsigned int>> load_aer(string filename)
+vector<tuple<unsigned int,unsigned int>> load_aer(string filename)
 {
 	std::ifstream file(filename, std::ios::binary);
 
 	unsigned int a;
 	unsigned int b;
 
-	vector<unsigned int> data;
-	vector<unsigned int> time;
+	//vector<unsigned int> data;
+	//vector<unsigned int> time;
+	vector<tuple<unsigned int, unsigned int>> data_time;
 
 	//for (int i=0; i<3; i++)
 	while (file.read(reinterpret_cast<char*>(&a),2))
@@ -24,9 +27,10 @@ tuple<vector<unsigned int>,vector<unsigned int>> load_aer(string filename)
 		b = __builtin_bswap32(b)-3625530;
 		//cout << hex << a << ", " << b << endl;
 		//cout << dec << a << ", " << b << endl;
-		data.push_back(a);
-		time.push_back(b);
+		//data.push_back(a);
+		//time.push_back(b);
+		data_time.push_back(make_tuple(a,b));
 	}
 
-	return make_tuple(data,time);
+	return data_time;
 }

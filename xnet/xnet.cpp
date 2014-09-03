@@ -1,101 +1,17 @@
 #include <map>
 #include <vector>
 #include <tuple>
-#include <algorithm>
-#include <math.h>
 #include <iostream>
 #include <fstream>
 #include <random>
 #include "xnet_types.h"
 
-#define EPSILON 0.0001
+#include "neuron.h"
+#include "synapse.h"
+#include "DVS.h"
+#include "BallCamera.h"
 
 using namespace std;
-
-class Synapse;
-
-class Neurons
-{
-	private:
-		vector<tuple<float,float>> spikes;
-		vector<vector<Synapse*>> synapses;
-		vector<vector<tuple<float,float,float>>> membrane_record;
-		vector<float> u;
-		vector<Time_t> tlast_update, tlast_spike;
-		float tau, Vt;
-		int num;
-		float Tinhibit, Trefrac, winhibit;
-		bool record_membrane;
-
-	public:
-	Neurons(int num) : u(num,0.0), membrane_record(num), tlast_update(num,0.0), tlast_spike(num,0.0), synapses(num)
-	{
-		this->tau = 5; //ms
-		this->Vt = 10000; //unit?
-		this->Tinhibit = 1.5; //ms
-		this->Trefrac = 10.0; //ms
-		this->winhibit = 500.0; //unit?
-		this->num = num;
-		this->record_membrane = false;
-		// not necessary for this type:
-		//this->spikes = [[] for i in range(num)]
-		//this->synapses = [[] for i in range(num)]
-		//this->tlast_update = [0 for i in range(num)]
-		//this->tlast_spike  = [0 for i in range(num)]
-
-		for (int i=0; i<num; ++i)
-		{
-			this->membrane_record[i].push_back(make_tuple(0.0,0.0,0.0));
-		}
-	}
-
-	void evolve(int neuron_number, float weight, Time_t t)
-	{
-		if (t > (*max_element(tlast_spike.begin(),tlast_spike.end()) + Tinhibit) || t < EPSILON)
-		{
-			float last_spike = tlast_spike[neuron_number];
-			if (((t-last_spike) > Trefrac) || t < EPSILON)
-			{
-				float last_t = tlast_update[neuron_number];
-				float last_u = u[neuron_number];
-				u[neuron_number] = last_u*exp(-(t-last_t)/tau) + weight;
-				tlast_update[neuron_number] = t;
-
-				if (u[neuron_number] > Vt)
-				{
-					tlast_spike[neuron_number] = t;
-					spikes.push_back(make_tuple(neuron_number,t));
-					update_synapses(neuron_number,t);
-					for (int n=0; n < num; ++n)
-						u[n] = 0;
-				}
-			}
-			if (this->record_membrane)
-				this->membrane_record[neuron_number].push_back(make_tuple(t,this->u[neuron_number],weight));
-		}
-	}
-
-	void update_synapses(int neuron_number, Time_t t);
-
-	vector<tuple<float,float>> get_spikes() const {
-		return this->spikes;
-	}
-
-	vector<vector<tuple<float,float,float>>> get_membrane_potential()
-	{
-		return this->membrane_record;
-	}
-
-	void register_synapse(unsigned int neuron, Synapse* synapse)
-	{
-		this->synapses[neuron].push_back(synapse);
-	}
-
-	vector<Synapse*> get_synapses(int neuron) const
-	{
-		return this->synapses[neuron];
-	}
-};
 
 //class Neurons_softinhibit(Neurons):
 //	def __init__(self,num):
@@ -122,211 +38,8 @@ class Neurons
 //		if self.__record_membrane:
 //			self.__membrane_record[neuron_number].append((t,self.__u[neuron_number],weight))
 
-class Synapse
-{
-	private:
-		Neurons& neurons;
-		unsigned int psn, id;
-		float w, wmin, wmax;
-		Time_t last_pre_spike;
-		float alpha_minus, alpha_plus;
-		Time_t TLTP;
 
 
-	public:
-
-	Synapse(unsigned int i, Neurons& neurons_ref, unsigned int post_neuron) :
-			neurons(neurons_ref),
-			psn(post_neuron),
-			id(i),
-			last_pre_spike(0)
-	{
-		w = 800; // TODO: should be normally distributed with mu=800, sigma=160
-		TLTP = 2; // ms
-		alpha_minus = 100; // TODO: should be normally distributed with mu=100, std=20
-		alpha_plus  = 50; // TODO: should be normally distributed with mu=50, std=10
-		wmin = 1.0; // TODO: should be normally distributed with mu=1.0, std=0.2
-		wmax = 1000.0; // TODO: should be normally distributed with mu=1000, std=200
-
-		register_at_neuron();
-	}
-
-	Synapse(unsigned int i,
-		    Neurons& neurons_ref,
-		    unsigned int post_neuron,
-		    float weight=800.0,
-		    float aminus=100.0,
-		    float aplus=50.0,
-			float wmin_=1.0,
-			float wmax_=1000.0
-		) : neurons(neurons_ref),
-			psn(post_neuron),
-			id(i),
-			last_pre_spike(0),
-			w(weight),
-			alpha_minus(aminus),
-			alpha_plus(aplus),
-			wmin(wmin_),
-			wmax(wmax_)
-	{
-		TLTP = 2; // ms
-
-		register_at_neuron();
-	}
-
-//	def __init__(self,id,neurons,post_neuron):
-//		self.__w = np.random.normal(800,160)
-//		self.__last_pre_spike = 0
-//		self.__TLTP = 2 # ms
-//		self.__alpha_minus = np.random.normal(100,20)
-//		self.__alpha_plus = np.random.normal(50,10)
-//		self.__wmin = np.random.normal(1,0.2)
-//		self.__wmax = np.random.normal(1000,200)
-//
-//		self.register_at_neuron()
-
-	void pre(Time_t t)
-	{
-		last_pre_spike = t;
-		neurons.evolve(psn,w,t);
-	}
-//	def pre(self,t):
-//		#print 'sending spike to neuron ',self.__psn,' with weight ',self.__w
-//		self.__last_pre_spike = t
-//		self.__neurons.evolve(self.__psn,self.__w,t)
-
-	void register_at_neuron()
-	{
-		neurons.register_synapse(psn, this);
-	}
-//	def register_at_neuron(self):
-//		self.__neurons.register_synapse(self.__psn,self.update)
-
-	void update(Time_t t)
-	{
-		if (t-last_pre_spike > TLTP && w > wmin)
-		{
-			w -= alpha_minus;
-		}
-		else if (t-last_pre_spike <= TLTP && w < wmax)
-		{
-			w += alpha_plus;
-		}
-
-		if (w > wmax)
-			w = wmax;
-		else if (w < wmin)
-			w = wmin;
-	}
-//	def update(self,t):
-//		if t-self.__last_pre_spike > self.__TLTP and self.__w > self.__wmin:
-//			self.__w -= self.__alpha_minus
-//		elif t-self.__last_pre_spike <= self.__TLTP and self.__w < self.__wmax:
-//			self.__w += self.__alpha_plus
-//
-//		if self.__w > self.__wmax:
-//			self.__w = self.__wmax
-//		elif self.__w < self.__wmin:
-//			self.__w = self.__wmin
-};
-
-void Neurons::update_synapses(int neuron_number, Time_t t)
-{
-	for (auto syn : this->synapses[neuron_number])
-		syn->update(t);
-}
-
-
-class DVS
-{
-private:
-	vector<vector<bool>> previous_image;
-	int image_width, image_height;
-
-public:
-	DVS(int image_width, int image_height) : previous_image(image_height,vector<bool>(image_width,false))
-	{
-		this->image_width = image_width;
-		this->image_height = image_height;
-	}
-
-	vector<vector<int>> calculate_spikes(vector<vector<bool>> image)
-	{
-		vector<vector<int>> image_diff (image_height,vector<int>(image_width,0) );
-		for (int x=0; x<image_width; ++x)
-		{
-			for (int y=0; y<image_height; ++y)
-			{
-				image_diff[y][x] = int(image[y][x]) - int(previous_image[y][x]);
-			}
-		}
-		previous_image = image;
-		return image_diff;
-	}
-};
-
-class BallCamera
-{
-private:
-	int image_width, image_height;
-	float angle, velocity, ball_radius, start_time;
-	vector<double> ball_start;
-
-public:
-	BallCamera(float angle, float velocity, float radius, int image_width=28, int image_height=28)
-	{
-		this->image_width = image_width;
-		this->image_height = image_height;
-		this->angle = angle;
-		this->velocity = velocity;
-		this->ball_radius = radius;
-		this->start_time = 0;
-		calculate_ball_start();
-	}
-
-	vector<vector<bool>> generate_image(float t)
-	{
-		cout << ball_start[0] << "," << ball_start[1] << endl;
-		vector<double> ball_center = {
-			cos(angle)*velocity*(t-start_time) - ball_start[0],
-			sin(angle)*velocity*(t-start_time) - ball_start[1]
-		};
-		cout << ball_center[0] << "," << ball_center[1] << endl;
-		vector<vector<bool>> image(image_height,vector<bool>(image_width,false) );
-		//unsigned int cnt = 0;
-		for (int x=0; x<image_width; ++x)
-		{
-			for (int y=0; y<image_height; ++y)
-			{
-				if (distance(x,y,ball_center) < ball_radius)
-				{
-					//++cnt;
-					image[y][x] = true;
-				}
-			}
-		}
-		return image;
-	}
-
-	float distance(float x, float y, vector<double> center)
-	{
-		float dist = sqrt(pow(x-center[0],2)+pow(y-center[1],2));
-		//cout << dist << endl;
-		return dist;
-	}
-
-	void calculate_ball_start()
-	{
-		ball_start = {cos(angle)*ball_radius*2.0,sin(angle)*ball_radius*2.0};
-	}
-
-	void reset_and_angle(float angle, float t)
-	{
-		this->angle = angle;
-		this->start_time = t;
-		calculate_ball_start();
-	}
-};
 
 int main()
 {
@@ -362,7 +75,7 @@ int main()
 		synapses.push_back({});
 		for (int j=0; j<num_neurons; ++j)
 			synapses.back().push_back(
-				Synapse(i*num_dvs_addresses+j,neurons,j,
+				Synapse(i*num_dvs_addresses+j,&neurons,j,
 						weight_distribution(generator),
 						am_distribution(generator),
 						ap_distribution(generator),

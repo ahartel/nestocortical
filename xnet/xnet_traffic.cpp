@@ -45,11 +45,12 @@ int main(int argc, char* argv[])
 
 	auto max_time = get<1>(data_time.back());
 
-	for (int run=0; run<10; ++run)
+	for (int run=0; run<1; ++run)
 	{
 		cout << "Run #" << run << endl;
 		for (auto event : data_time)
 		{
+			break;
 			auto time = get<1>(event) + max_time*run;
 			for (Synapse synapse : synapses[get<0>(event)])
 			{
@@ -63,11 +64,32 @@ int main(int argc, char* argv[])
 	}
 
 	auto spikes = neurons.get_spikes();
-	ofstream file("xnet_traffic_spikes.dat",ios::out);
+	ofstream spike_file("xnet_traffic_spikes.dat",ios::out);
 	for (auto pair : spikes)
 	{
-		file << get<0>(pair) << "," << get<1>(pair) << "\n";
+		spike_file << get<0>(pair) << "," << get<1>(pair) << "\n";
 	}
-	file.close();
+	spike_file.close();
 
+	// write weights to a file with one line per line of weights in the image
+	// one neuron gets image_height lines with image_width entries
+	// after the lines of one neuron have been written, the next neuron starts immediately
+	vector<vector<float>> neuron_weights(num_neurons);
+	for (auto syngroup : synapses)
+	{
+		for (int i=0; i<num_neurons; ++i)
+		{
+			neuron_weights[i].push_back(syngroup[i].get_weight());
+		}
+	}
+	ofstream weight_file("xnet_traffic_weights.dat",ios::out);
+	for (auto neuron : neuron_weights)
+	{
+		for (int i=0; i<num_dvs_addresses; i=i+2) {
+			weight_file << neuron[i] << " ";
+			if (image_width > 0 && i/2 % image_width == 0)
+				weight_file << "\n";
+		}
+	}
+	weight_file.close();
 }

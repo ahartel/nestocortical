@@ -107,6 +107,11 @@ class Synapse
 //			self.__w = self.__wmax
 //		elif self.__w < self.__wmin:
 //			self.__w = self.__wmin
+
+	float get_weight() const
+	{
+		return w;
+	}
 };
 
 

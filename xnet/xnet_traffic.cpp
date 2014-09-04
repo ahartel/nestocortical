@@ -9,15 +9,53 @@
 
 using namespace std;
 
+typedef vector<vector<Synapse>> SynapseArray;
+
+// define geometry
+int num_neurons = 60;
+int image_width  = 128;
+int image_height = 128;
+int num_dvs_addresses = 2 * image_width * image_height;
+
+void dump_weights(SynapseArray& synapses, string filename)
+{
+	// write weights to a file with one line per line of weights in the image
+	// one neuron gets image_height lines with image_width entries
+	// after the lines of one neuron have been written, the next neuron starts immediately
+	vector<vector<float>> neuron_weights(num_neurons);
+	for (auto syngroup : synapses)
+	{
+		for (int i=0; i<num_neurons; ++i)
+		{
+			neuron_weights[i].push_back(syngroup[i].get_weight());
+		}
+	}
+	ofstream weight_file(filename,ios::out);
+	weight_file << fixed << setprecision(2);
+	for (auto neuron : neuron_weights)
+	{
+		unsigned int cnt=0;
+		for (int i=0; i<num_dvs_addresses; i=i+2) {
+			if ((i > 0 && (i+2)/2 % image_width == 0 ) || i == num_dvs_addresses-2)
+			{
+				weight_file << neuron[i] << "\n";
+				++cnt;
+			}
+			else
+				weight_file << neuron[i] << " ";
+		}
+	}
+	weight_file.close();
+}
+
 int main(int argc, char* argv[])
 {
-	// define geometry
-	int num_neurons = 48;
-	int image_width  = 128;
-	int image_height = 128;
-	int num_dvs_addresses = 2 * image_width * image_height;
 	// load data
-	auto data_time = load_aer(argv[1]);
+	int max_load_time = -1;
+	if (argc > 2)
+		max_load_time = atoi(argv[2]);
+
+	auto data_time = load_aer(argv[1], max_load_time);
 	// init neurons
 	Neurons neurons(num_neurons);
 	// synaptic parameters are random

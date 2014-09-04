@@ -1,5 +1,8 @@
 #pragma once
 #include "xnet_types.h"
+#include <iostream>
+
+using namespace std;
 
 class Synapse
 {
@@ -67,6 +70,8 @@ class Synapse
 	void pre(Time_t t)
 	{
 		last_pre_spike = t;
+		if (psn == 19)
+			cout << "Sending spike to neuron " << psn << " @time " << t << endl;
 		neurons->evolve(psn,w,t);
 	}
 //	def pre(self,t):
@@ -83,6 +88,9 @@ class Synapse
 
 	void update(Time_t t)
 	{
+		cout << "Updating synapse ID " << id << " to neuron " << psn << endl;
+		if (last_pre_spike > 0)
+			cout << "update in synapse with last_pre_spike=" << last_pre_spike << " and t=" << t << endl;
 		if (t-last_pre_spike > TLTP && w > wmin)
 		{
 			w -= alpha_minus;

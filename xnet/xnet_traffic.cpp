@@ -6,6 +6,8 @@
 
 #include <tuple>
 #include <iostream>
+#include <iomanip>
+#include <cstdlib>
 
 using namespace std;
 
@@ -66,11 +68,14 @@ int main(int argc, char* argv[])
 	std::normal_distribution<float> wmin_distribution(1.0,0.2);
 	std::normal_distribution<float> wmax_distribution(1000.0,200.0);
 	// init synapses
-	vector<vector<Synapse>> synapses;
+	SynapseArray synapses;
 	for (int i=0; i<num_dvs_addresses; ++i)
 	{
 		synapses.push_back({});
 		for (int j=0; j<num_neurons; ++j)
+		{
+			if (j==19)
+				cout << "Synapse ID " << i*num_dvs_addresses+j << " connects to neuron " << j << endl;
 			synapses.back().push_back(
 				Synapse(i*num_dvs_addresses+j,&neurons,j,
 						weight_distribution(generator),
@@ -79,7 +84,14 @@ int main(int argc, char* argv[])
 						wmin_distribution(generator),
 						wmax_distribution(generator)
 						));
+		}
 	}
+
+	auto syn = neurons.get_synapses(19);
+	cout << syn.size() << endl;
+	return 0;
+
+	dump_weights(synapses, "xnet_traffic_weights_initial.txt");
 
 	auto max_time = get<1>(data_time.back());
 
@@ -88,16 +100,19 @@ int main(int argc, char* argv[])
 		cout << "Run #" << run << endl;
 		for (auto event : data_time)
 		{
-			break;
-			auto time = get<1>(event) + max_time*run;
-			for (Synapse synapse : synapses[get<0>(event)])
+			auto time  = get<1>(event) + max_time*run;
+			auto pixel = get<0>(event);
+			unsigned int neuron_cnt = 0;
+			for (Synapse synapse : synapses[pixel])
 			{
+				//cout << "Sending spike to synapse[" << pixel << "][" << neuron_cnt << "]" << endl;
 				synapse.pre(time);
+				++neuron_cnt;
 			}
-			if (time % 1000000 == 0)
+
+			if (time > 0 && time % 10000 == 0)
 				cout << "time = " << time << endl;
-			//if (time >= 100000000)
-			//	break;
+
 		}
 	}
 
@@ -109,25 +124,7 @@ int main(int argc, char* argv[])
 	}
 	spike_file.close();
 
-	// write weights to a file with one line per line of weights in the image
-	// one neuron gets image_height lines with image_width entries
-	// after the lines of one neuron have been written, the next neuron starts immediately
-	vector<vector<float>> neuron_weights(num_neurons);
-	for (auto syngroup : synapses)
-	{
-		for (int i=0; i<num_neurons; ++i)
-		{
-			neuron_weights[i].push_back(syngroup[i].get_weight());
-		}
-	}
-	ofstream weight_file("xnet_traffic_weights.dat",ios::out);
-	for (auto neuron : neuron_weights)
-	{
-		for (int i=0; i<num_dvs_addresses; i=i+2) {
-			weight_file << neuron[i] << " ";
-			if (image_width > 0 && i/2 % image_width == 0)
-				weight_file << "\n";
-		}
-	}
-	weight_file.close();
+	dump_weights(synapses, "xnet_traffic_weights_final.txt");
 }
+
+

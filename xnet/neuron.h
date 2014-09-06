@@ -42,7 +42,7 @@ namespace xnet {
 			//this->synapses = [[] for i in range(num)]
 			//this->tlast_update = [0 for i in range(num)]
 			//this->tlast_spike  = [0 for i in range(num)]
-			
+
 			synapses = new Synapse**[num];
 			synapse_count = new int[num];
 
@@ -80,4 +80,31 @@ namespace xnet {
 		Synapse** get_synapses(int neuron) const;
 	};
 }
+
+//class Neurons_softinhibit(Neurons):
+//	def __init__(self,num):
+//		super(Neurons_softinhibit,self).__init__(num)
+//
+//	def evolve(self,neuron_number,weight,t):
+//		last_spike = self.__tlast_spike[neuron_number]
+//		if (t-last_spike) > self.__Trefrac:
+//			last_t = self.__tlast_update[neuron_number]
+//			last_u = self.__u[neuron_number]
+//			self.__u[neuron_number] = last_u*math.exp(-(t-last_t)/self.__tau) + weight
+//			self.__tlast_update[neuron_number] = t
+//
+//			if self.__u[neuron_number] > self.__Vt:
+//				self.__tlast_spike[neuron_number] = t
+//				self.__spikes[neuron_number].append(t)
+//				self.update_synapses(neuron_number,t)
+//				for n in range(self.__num):
+//					if n == neuron_number:
+//						self.__u[n] = 0
+//					else:
+//						self.__u[n] -= self.__winhibit
+//
+//		if self.__record_membrane:
+//			self.__membrane_record[neuron_number].append((t,self.__u[neuron_number],weight))
+
+
 

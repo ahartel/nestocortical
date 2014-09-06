@@ -1,4 +1,5 @@
 #include <map>
+#include <cstdlib>
 #include <vector>
 #include <tuple>
 #include <iostream>
@@ -7,6 +8,7 @@
 #include "xnet_types.h"
 
 #include "neuron.h"
+#define DEBUG_OUTPUT
 #include "synapse.h"
 #include "DVS.h"
 #include "BallCamera.h"
@@ -14,42 +16,15 @@
 using namespace std;
 using namespace xnet;
 
-//class Neurons_softinhibit(Neurons):
-//	def __init__(self,num):
-//		super(Neurons_softinhibit,self).__init__(num)
-//
-//	def evolve(self,neuron_number,weight,t):
-//		last_spike = self.__tlast_spike[neuron_number]
-//		if (t-last_spike) > self.__Trefrac:
-//			last_t = self.__tlast_update[neuron_number]
-//			last_u = self.__u[neuron_number]
-//			self.__u[neuron_number] = last_u*math.exp(-(t-last_t)/self.__tau) + weight
-//			self.__tlast_update[neuron_number] = t
-//
-//			if self.__u[neuron_number] > self.__Vt:
-//				self.__tlast_spike[neuron_number] = t
-//				self.__spikes[neuron_number].append(t)
-//				self.update_synapses(neuron_number,t)
-//				for n in range(self.__num):
-//					if n == neuron_number:
-//						self.__u[n] = 0
-//					else:
-//						self.__u[n] -= self.__winhibit
-//
-//		if self.__record_membrane:
-//			self.__membrane_record[neuron_number].append((t,self.__u[neuron_number],weight))
 
-
-
-
-int main()
+int main(int argc, char* argv[])
 {
 	int image_width = 16;
 	int image_height = 16;
 	int num_neurons = 48;
 	int num_dvs_addresses = 2 * image_width * image_height;
 	float dt = 1.0;
-	int	num_repetitions = 100;
+	int	num_repetitions = atoi(argv[1]);
 
 	DVS dvs(image_width,image_height);
 	BallCamera cam {

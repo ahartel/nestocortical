@@ -111,19 +111,58 @@ namespace xnet {
 
 		void update(Time_t t)
 		{
+			auto delta_t = t-last_pre_spike;
+
 			#ifdef DEBUG_OUTPUT
-			cout << "Updating synapse ID " << id << " to neuron " << psn << endl;
-			if (last_pre_spike > 0)
-				cout << "update in synapse with last_pre_spike=" << last_pre_spike << " and t=" << t << endl;
+			cout << "Updating synapse ID " << id << " to neuron " << psn << " with weight " << w << " and wmax " << wmax << endl;
+			cout << "update in synapse with last_pre_spike=" << last_pre_spike << " and t=" << t << " (delta_t:" << delta_t << ")" << endl;
 			#endif
-			if (t-last_pre_spike > TLTP && w > wmin)
+
+			if (delta_t < 0)
 			{
-				w -= alpha_minus;
+				if (w > wmin)
+				{
+			#ifdef DEBUG_OUTPUT
+					cout << " depressing synapse, new weight: " << w << endl;
+			#endif
+					w -= alpha_minus;
+				}
+			#ifdef DEBUG_OUTPUT
+				else
+				{
+					cout << "Not doing anything 1" << endl;
+				}
+			#endif
 			}
-			else if (t-last_pre_spike <= TLTP && w < wmax)
+			else if (delta_t >=0)
 			{
-				w += alpha_plus;
+				if (delta_t > TLTP && w > wmin)
+				{
+			#ifdef DEBUG_OUTPUT
+					cout << " depressing synapse, new weight: " << w << endl;
+			#endif
+					w -= alpha_minus;
+				}
+				else if (delta_t <= TLTP && w < wmax)
+				{
+			#ifdef DEBUG_OUTPUT
+					cout << " potentiating synapse, new weight: "<< w << endl;
+			#endif
+					w += alpha_plus;
+				}
+			#ifdef DEBUG_OUTPUT
+				else
+				{
+					cout << "Not doing anything 2" << endl;
+				}
+			#endif
 			}
+			#ifdef DEBUG_OUTPUT
+			else
+			{
+				cout << "Not doing anything 3" << endl;
+			}
+			#endif
 
 			if (w > wmax)
 				w = wmax;

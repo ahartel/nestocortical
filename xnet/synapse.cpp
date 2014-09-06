@@ -1,6 +1,8 @@
 #include "synapse.h"
 #include "neuron.h"
 
+#include <sstream>
+
 namespace xnet {
 
 	void Synapse::pre(Time_t t)
@@ -33,21 +35,19 @@ namespace xnet {
 				neuron_weights[i].push_back(synapses[n][i].get_weight());
 			}
 		}
-		ofstream weight_file(filename,ios::out);
-		weight_file << fixed << setprecision(2);
+		unsigned int cnt = 0;
 		for (auto neuron : neuron_weights)
 		{
-			unsigned int cnt=0;
-			for (int i=0; i<num_inputs; i=i+2) {
-				if ((i > 0 && (i+2)/2 % num_inputs_per_row == 0 ) || i == num_inputs-2)
-				{
-					weight_file << neuron[i] << "\n";
-					++cnt;
-				}
-				else
-					weight_file << neuron[i] << " ";
+			stringstream ss("");
+			ss << filename << cnt++;
+			ofstream weight_file(ss.str(),ios::out);
+			weight_file << fixed << setprecision(2);
+
+			for (int i=0; i<num_inputs; ++i) {
+				weight_file << neuron[i] << " ";
 			}
+
+			weight_file.close();
 		}
-		weight_file.close();
 	}
 }

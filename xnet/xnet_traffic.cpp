@@ -11,7 +11,7 @@
 
 using namespace std;
 
-typedef vector<vector<Synapse>> SynapseArray;
+typedef Synapse** SynapseArray;
 
 // define geometry
 int num_neurons = 60;
@@ -19,17 +19,18 @@ int image_width  = 128;
 int image_height = 128;
 int num_dvs_addresses = 2 * image_width * image_height;
 
-void dump_weights(SynapseArray& synapses, string filename)
+void dump_weights(SynapseArray const& synapses, string filename)
 {
 	// write weights to a file with one line per line of weights in the image
 	// one neuron gets image_height lines with image_width entries
 	// after the lines of one neuron have been written, the next neuron starts immediately
 	vector<vector<float>> neuron_weights(num_neurons);
-	for (auto syngroup : synapses)
+	//for (auto syngroup : synapses)
+	for (int n=0; n<num_dvs_addresses; ++n)
 	{
 		for (int i=0; i<num_neurons; ++i)
 		{
-			neuron_weights[i].push_back(syngroup[i].get_weight());
+			neuron_weights[i].push_back(synapses[n][i].get_weight());
 		}
 	}
 	ofstream weight_file(filename,ios::out);
@@ -59,7 +60,7 @@ int main(int argc, char* argv[])
 
 	auto data_time = load_aer(argv[1], max_load_time);
 	// init neurons
-	Neurons neurons(num_neurons);
+	Neurons neurons(num_neurons, num_dvs_addresses);
 	// synaptic parameters are random
 	std::default_random_engine generator;
 	std::normal_distribution<float> weight_distribution(800.0,160.0);
@@ -69,29 +70,41 @@ int main(int argc, char* argv[])
 	std::normal_distribution<float> wmax_distribution(1000.0,200.0);
 	// init synapses
 	SynapseArray synapses;
+	synapses = new Synapse*[num_dvs_addresses];
 	for (int i=0; i<num_dvs_addresses; ++i)
 	{
-		synapses.push_back({});
+		//synapses.push_back({});
+		synapses[i] = new Synapse[num_neurons];
 		for (int j=0; j<num_neurons; ++j)
 		{
-			if (j==19)
-				cout << "Synapse ID " << i*num_dvs_addresses+j << " connects to neuron " << j << endl;
-			synapses.back().push_back(
-				Synapse(i*num_dvs_addresses+j,&neurons,j,
+			//if (j==19)
+			//	cout << "Synapse ID " << i*num_neurons+j << " connects to neuron " << j << endl;
+			synapses[i][j].set_parameters(
+				        i*num_neurons+j,&neurons,j,
 						weight_distribution(generator),
 						am_distribution(generator),
 						ap_distribution(generator),
 						wmin_distribution(generator),
 						wmax_distribution(generator)
-						));
+						);
 		}
 	}
 
-	auto syn = neurons.get_synapses(19);
-	cout << syn.size() << endl;
-	return 0;
+	//auto syns = neurons.get_synapses(19);
+	////cout << "Size:" << syns.size() << endl;
+	//for (int i=0; i<10; ++i)
+	//{
+	//	cout << syns[i]->get_id() << endl;
+	//	cout << syns[i]->get_psn() << endl;
+	//}
 
 	dump_weights(synapses, "xnet_traffic_weights_initial.txt");
+
+	//syns = neurons.get_synapses(1);
+	//cout << syns.size() << endl;
+	//cout << syns.back()->get_id() << endl;
+	//cout << syns.back()->get_psn() << endl;
+	//return 0;
 
 	auto max_time = get<1>(data_time.back());
 
@@ -103,10 +116,11 @@ int main(int argc, char* argv[])
 			auto time  = get<1>(event) + max_time*run;
 			auto pixel = get<0>(event);
 			unsigned int neuron_cnt = 0;
-			for (Synapse synapse : synapses[pixel])
+			//for (Synapse synapse : synapses[pixel])
+			for (int j=0; j<num_neurons; ++j)//Synapse synapse : synapses[pixel])
 			{
 				//cout << "Sending spike to synapse[" << pixel << "][" << neuron_cnt << "]" << endl;
-				synapse.pre(time);
+				synapses[pixel][j].pre(time);
 				++neuron_cnt;
 			}
 

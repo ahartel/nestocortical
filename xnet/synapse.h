@@ -1,6 +1,7 @@
 #pragma once
 #include "xnet_types.h"
 #include <iostream>
+#include "neuron.h"
 
 using namespace std;
 
@@ -16,6 +17,17 @@ class Synapse
 
 
 	public:
+
+	Synapse()
+	{
+		w = 800; // TODO: should be normally distributed with mu=800, sigma=160
+		TLTP = 2; // ms
+		alpha_minus = 100; // TODO: should be normally distributed with mu=100, std=20
+		alpha_plus  = 50; // TODO: should be normally distributed with mu=50, std=10
+		wmin = 1.0; // TODO: should be normally distributed with mu=1.0, std=0.2
+		wmax = 1000.0; // TODO: should be normally distributed with mu=1000, std=200
+		last_pre_spike = 0;
+	}
 
 	Synapse(unsigned int i, Neurons* neurons_ref, unsigned int post_neuron) :
 			neurons(neurons_ref),
@@ -56,6 +68,29 @@ class Synapse
 		register_at_neuron();
 	}
 
+	void set_parameters(unsigned int i,
+		    Neurons* neurons_pointer,
+		    unsigned int post_neuron,
+		    float weight=800.0,
+		    float aminus=100.0,
+		    float aplus=50.0,
+			float wmin_=1.0,
+			float wmax_=1000.0
+		)
+	{
+		neurons = neurons_pointer;
+		psn = post_neuron;
+		id = i;
+		w = weight;
+		alpha_minus = aminus;
+		alpha_plus = aplus;
+		wmin = wmin_;
+		wmax = wmax_;
+		TLTP = 2; // ms
+
+		register_at_neuron();
+	}
+
 //	def __init__(self,id,neurons,post_neuron):
 //		self.__w = np.random.normal(800,160)
 //		self.__last_pre_spike = 0
@@ -67,30 +102,15 @@ class Synapse
 //
 //		self.register_at_neuron()
 
-	void pre(Time_t t)
-	{
-		last_pre_spike = t;
-		if (psn == 19)
-			cout << "Sending spike to neuron " << psn << " @time " << t << endl;
-		neurons->evolve(psn,w,t);
-	}
-//	def pre(self,t):
-//		#print 'sending spike to neuron ',self.__psn,' with weight ',self.__w
-//		self.__last_pre_spike = t
-//		self.__neurons.evolve(self.__psn,self.__w,t)
+	void pre(Time_t t);
 
-	void register_at_neuron()
-	{
-		neurons->register_synapse(psn, this);
-	}
-//	def register_at_neuron(self):
-//		self.__neurons.register_synapse(self.__psn,self.update)
+	void register_at_neuron();
 
 	void update(Time_t t)
 	{
-		cout << "Updating synapse ID " << id << " to neuron " << psn << endl;
-		if (last_pre_spike > 0)
-			cout << "update in synapse with last_pre_spike=" << last_pre_spike << " and t=" << t << endl;
+		//cout << "Updating synapse ID " << id << " to neuron " << psn << endl;
+		//if (last_pre_spike > 0)
+		//	cout << "update in synapse with last_pre_spike=" << last_pre_spike << " and t=" << t << endl;
 		if (t-last_pre_spike > TLTP && w > wmin)
 		{
 			w -= alpha_minus;
@@ -120,6 +140,16 @@ class Synapse
 	{
 		return w;
 	}
+
+	unsigned int get_id() const
+	{
+		return id;
+	}
+
+	unsigned int get_psn() const
+	{
+		return psn;
+	}	
 };
 
 

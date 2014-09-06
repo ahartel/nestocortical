@@ -12,6 +12,7 @@
 #include "BallCamera.h"
 
 using namespace std;
+using namespace xnet;
 
 //class Neurons_softinhibit(Neurons):
 //	def __init__(self,num):
@@ -59,8 +60,7 @@ int main()
             image_height
 	};
 
-//	neurons = Neurons_softinhibit(num_neurons)
-	Neurons neurons(num_neurons);
+	Neurons neurons(num_neurons, num_dvs_addresses);
 
 	std::default_random_engine generator;
 	std::normal_distribution<float> weight_distribution(800.0,160.0);
@@ -69,20 +69,25 @@ int main()
 	std::normal_distribution<float> wmin_distribution(1.0,0.2);
 	std::normal_distribution<float> wmax_distribution(1000.0,200.0);
 
-	vector<vector<Synapse>> synapses;
+	SynapseArray synapses;
+	synapses = new Synapse*[num_dvs_addresses];
+	//vector<vector<Synapse>> synapses;
 	for (int i=0; i<num_dvs_addresses; ++i)
 	{
-		synapses.push_back({});
+		synapses[i] = new Synapse[num_neurons];
+
 		for (int j=0; j<num_neurons; ++j)
-			synapses.back().push_back(
-				Synapse(i*num_dvs_addresses+j,&neurons,j,
+			synapses[i][j].set_parameters(
+						i*num_dvs_addresses+j,&neurons,j,
 						weight_distribution(generator),
 						am_distribution(generator),
 						ap_distribution(generator),
 						wmin_distribution(generator),
 						wmax_distribution(generator)
-						));
+					);
 	}
+
+	dump_weights(synapses, "xnet_balls_weights_initial.txt", num_neurons, num_dvs_addresses, image_width);
 
 	float time = 0;
 	for (int rep=0; rep<num_repetitions; ++rep)
@@ -114,19 +119,17 @@ int main()
 						if (image_diff[row][col] > 0)
 						{
 							on_pixels += 1;
-							for (Synapse synapse : synapses[(row*image_width+col)*2])
-								synapse.pre(time);
-//							for synapse in synapses[(row*image_width+col)*2]:
-//								synapse.pre(time)
+
+							for (int j=0; j<num_neurons; ++j)//Synapse synapse : synapses[pixel])
+								synapses[(row*image_width+col)*2][j].pre(time);
 //							#print row,col,pixel
 						}
 						else if (image_diff[col][row] < 0)
 						{
 							off_pixels += 1;
-							for (Synapse synapse : synapses[(row*image_width+col)*2+1])
-								synapse.pre(time);
-//							for synapse in synapses[(row*image_width+col)*2+1]:
-//								synapse.pre(time)
+
+							for (int j=0; j<num_neurons; ++j)//Synapse synapse : synapses[pixel])
+								synapses[(row*image_width+col)*2+1][j].pre(time);
 //							#print row,col,pixel
 						}
 					}
@@ -145,7 +148,7 @@ int main()
 	}
 
 	auto spikes = neurons.get_spikes();
-	ofstream file("spikes.dat",ios::out);
+	ofstream file("xnet_balls_spikes.dat",ios::out);
 	for (auto pair : spikes)
 	{
 		file << get<0>(pair) << "," << get<1>(pair) << "\n";
@@ -173,5 +176,11 @@ int main()
 //
 //	plt.show()
 //
+	dump_weights(synapses, "xnet_balls_weights_final.txt", num_neurons, num_dvs_addresses, image_width);
+
+	// delete synapses
+	for (int i=0; i<num_dvs_addresses; ++i)
+		delete[] synapses[i];
+	delete[] synapses;
 }
 //# vim: set noexpandtab

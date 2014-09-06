@@ -1,3 +1,5 @@
+#undef DEBUG_OUTPUT
+
 #include "neuron.h"
 #include "synapse.h"
 #include "DVS.h"
@@ -8,48 +10,16 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
+#include <fstream>
 
 using namespace std;
-
-typedef Synapse** SynapseArray;
+using namespace xnet;
 
 // define geometry
 int num_neurons = 60;
 int image_width  = 128;
 int image_height = 128;
 int num_dvs_addresses = 2 * image_width * image_height;
-
-void dump_weights(SynapseArray const& synapses, string filename)
-{
-	// write weights to a file with one line per line of weights in the image
-	// one neuron gets image_height lines with image_width entries
-	// after the lines of one neuron have been written, the next neuron starts immediately
-	vector<vector<float>> neuron_weights(num_neurons);
-	//for (auto syngroup : synapses)
-	for (int n=0; n<num_dvs_addresses; ++n)
-	{
-		for (int i=0; i<num_neurons; ++i)
-		{
-			neuron_weights[i].push_back(synapses[n][i].get_weight());
-		}
-	}
-	ofstream weight_file(filename,ios::out);
-	weight_file << fixed << setprecision(2);
-	for (auto neuron : neuron_weights)
-	{
-		unsigned int cnt=0;
-		for (int i=0; i<num_dvs_addresses; i=i+2) {
-			if ((i > 0 && (i+2)/2 % image_width == 0 ) || i == num_dvs_addresses-2)
-			{
-				weight_file << neuron[i] << "\n";
-				++cnt;
-			}
-			else
-				weight_file << neuron[i] << " ";
-		}
-	}
-	weight_file.close();
-}
 
 int main(int argc, char* argv[])
 {
@@ -73,12 +43,9 @@ int main(int argc, char* argv[])
 	synapses = new Synapse*[num_dvs_addresses];
 	for (int i=0; i<num_dvs_addresses; ++i)
 	{
-		//synapses.push_back({});
 		synapses[i] = new Synapse[num_neurons];
 		for (int j=0; j<num_neurons; ++j)
 		{
-			//if (j==19)
-			//	cout << "Synapse ID " << i*num_neurons+j << " connects to neuron " << j << endl;
 			synapses[i][j].set_parameters(
 				        i*num_neurons+j,&neurons,j,
 						weight_distribution(generator),
@@ -86,7 +53,7 @@ int main(int argc, char* argv[])
 						ap_distribution(generator),
 						wmin_distribution(generator),
 						wmax_distribution(generator)
-						);
+					);
 		}
 	}
 
@@ -98,7 +65,7 @@ int main(int argc, char* argv[])
 	//	cout << syns[i]->get_psn() << endl;
 	//}
 
-	dump_weights(synapses, "xnet_traffic_weights_initial.txt");
+	dump_weights(synapses, "xnet_traffic_weights_initial.txt", num_neurons, num_dvs_addresses, image_width);
 
 	//syns = neurons.get_synapses(1);
 	//cout << syns.size() << endl;
@@ -108,20 +75,21 @@ int main(int argc, char* argv[])
 
 	auto max_time = get<1>(data_time.back());
 
-	for (int run=0; run<1; ++run)
+	for (int run=0; run<2; ++run)
 	{
 		cout << "Run #" << run << endl;
 		for (auto event : data_time)
 		{
 			auto time  = get<1>(event) + max_time*run;
 			auto pixel = get<0>(event);
-			unsigned int neuron_cnt = 0;
-			//for (Synapse synapse : synapses[pixel])
+
 			for (int j=0; j<num_neurons; ++j)//Synapse synapse : synapses[pixel])
 			{
-				//cout << "Sending spike to synapse[" << pixel << "][" << neuron_cnt << "]" << endl;
+#ifdef DEBUG_OUTPUT
+				if (j==19)
+					cout << "Sending spike to synapse[" << pixel << "][" << j << "]" << endl;
+#endif
 				synapses[pixel][j].pre(time);
-				++neuron_cnt;
 			}
 
 			if (time > 0 && time % 10000 == 0)
@@ -138,7 +106,12 @@ int main(int argc, char* argv[])
 	}
 	spike_file.close();
 
-	dump_weights(synapses, "xnet_traffic_weights_final.txt");
+	dump_weights(synapses, "xnet_traffic_weights_final.txt", num_neurons, num_dvs_addresses, image_width);
+
+	// delete synapses
+	for (int i=0; i<num_dvs_addresses; ++i)
+		delete[] synapses[i];
+	delete[] synapses;
 }
 
 

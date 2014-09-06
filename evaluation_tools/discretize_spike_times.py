@@ -1,4 +1,4 @@
-import sys, argparse
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -11,7 +11,7 @@ parser.add_argument('--num', help='linspace num value', type=int, dest='num')
 args=parser.parse_args()
 
 # load spike data
-data = np.loadtxt(sys.argv[1],delimiter=',')
+data = np.loadtxt(args.filename, delimiter=',')
 # create time bins every 100 ms
 # every second time bin codes for a ball passing by in a certain direction
 bins = np.linspace(args.start,args.stop,args.num)

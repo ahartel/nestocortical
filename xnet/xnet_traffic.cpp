@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 	//	cout << syns[i]->get_psn() << endl;
 	//}
 
-	dump_weights(synapses, "xnet_traffic_weights_initial.txt", num_neurons, num_dvs_addresses, image_width);
+	dump_weights(synapses, "./results/xnet_traffic_weights_initial.txt", num_neurons, num_dvs_addresses);
 
 	//syns = neurons.get_synapses(1);
 	//cout << syns.size() << endl;
@@ -99,14 +99,14 @@ int main(int argc, char* argv[])
 	}
 
 	auto spikes = neurons.get_spikes();
-	ofstream spike_file("xnet_traffic_spikes.dat",ios::out);
+	ofstream spike_file("./results/xnet_traffic_spikes.dat",ios::out);
 	for (auto pair : spikes)
 	{
 		spike_file << get<0>(pair) << "," << get<1>(pair) << "\n";
 	}
 	spike_file.close();
 
-	dump_weights(synapses, "xnet_traffic_weights_final.txt", num_neurons, num_dvs_addresses, image_width);
+	dump_weights(synapses, "./results/xnet_traffic_weights_final.txt", num_neurons, num_dvs_addresses);
 
 	// delete synapses
 	for (int i=0; i<num_dvs_addresses; ++i)

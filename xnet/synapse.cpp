@@ -22,7 +22,7 @@ namespace xnet {
 	//	def register_at_neuron(self):
 	//		self.__neurons.register_synapse(self.__psn,self.update)
 
-	void dump_weights(SynapseArray const& synapses, string filename, size_t num_neurons, size_t num_inputs, size_t num_inputs_per_row)
+	void dump_weights(SynapseArray const& synapses, string filename, size_t num_neurons, size_t num_inputs)
 	{
 		// write weights to a file with one line per line of weights in the image
 		// one neuron gets image_height lines with image_width entries
@@ -43,9 +43,10 @@ namespace xnet {
 			ofstream weight_file(ss.str(),ios::out);
 			weight_file << fixed << setprecision(2);
 
-			for (int i=0; i<num_inputs; ++i) {
+			for (int i=0; i<num_inputs-1; ++i) {
 				weight_file << neuron[i] << " ";
 			}
+			weight_file << neuron[num_inputs-1];
 
 			weight_file.close();
 		}

@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 					);
 	}
 
-	dump_weights(synapses, "xnet_balls_weights_initial.txt", num_neurons, num_dvs_addresses, image_width);
+	dump_weights(synapses, "./results/xnet_balls_weights_initial.txt", num_neurons, num_dvs_addresses);
 
 	float time = 0;
 	for (int rep=0; rep<num_repetitions; ++rep)
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 	}
 
 	auto spikes = neurons.get_spikes();
-	ofstream file("xnet_balls_spikes.dat",ios::out);
+	ofstream file("./results/xnet_balls_spikes.dat",ios::out);
 	for (auto pair : spikes)
 	{
 		file << get<0>(pair) << "," << get<1>(pair) << "\n";
@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
 //
 //	plt.show()
 //
-	dump_weights(synapses, "xnet_balls_weights_final.txt", num_neurons, num_dvs_addresses, image_width);
+	dump_weights(synapses, "./results/xnet_balls_weights_final.txt", num_neurons, num_dvs_addresses);
 
 	// delete synapses
 	for (int i=0; i<num_dvs_addresses; ++i)

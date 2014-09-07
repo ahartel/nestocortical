@@ -198,6 +198,6 @@ namespace xnet {
 
 	typedef Synapse** SynapseArray;
 
-	void dump_weights(SynapseArray const& synapses, string filename, size_t num_neurons, size_t num_inputs, size_t num_inputs_per_row);
+	void dump_weights(SynapseArray const& synapses, string filename, size_t num_neurons, size_t num_inputs);
 }
 

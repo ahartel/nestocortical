@@ -65,11 +65,14 @@ int main(int argc, char* argv[])
 	dump_weights(synapses, "./results/xnet_balls_weights_initial.txt", num_neurons, num_dvs_addresses);
 
 	float time = 0;
+	int angles[8] = {0,45,90,135,180,225,270,315};
+	std::uniform_int_distribution<int> angle_dist(0,7);
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
 		cout << "rep " << rep << endl;
-		for (float angle=0; angle<360; angle+=45)
-		{
+		//for (float angle=0; angle<360; angle+=45)
+		//{
+		int angle = angles[angle_dist(generator)];
 			cout << "angle " << angle << endl;
 			cam.reset_and_angle(angle,time);
 			for (float t=0.0; t<100.0; t+=dt)
@@ -119,7 +122,7 @@ int main(int argc, char* argv[])
 			}
 			// add a time-step of 100 ms between each run
 			time += 100.0;
-		}
+		//}
 	}
 
 	auto spikes = neurons.get_spikes();

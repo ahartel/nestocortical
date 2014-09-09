@@ -73,7 +73,8 @@ int main(int argc, char* argv[])
 		//for (float angle=0; angle<360; angle+=45)
 		//{
 		int angle = angles[angle_dist(generator)];
-			cout << "angle " << angle << endl;
+			cout << "-------- time = " << time << ", angle = " << angle << " ----------" << endl;
+			//cout << "angle " << angle << endl;
 			cam.reset_and_angle(angle,time);
 			for (float t=0.0; t<100.0; t+=dt)
 			{
@@ -112,12 +113,10 @@ int main(int argc, char* argv[])
 						}
 					}
 				}
-//				#print image_diff
-				if (on_pixels > 0 || off_pixels > 0)
-				{
-					cout << "ON: " << on_pixels << ", OFF: " << off_pixels << endl;
-				}
-				cout << "-------- time = " << time << " ----------" << endl;
+				//if (on_pixels > 0 || off_pixels > 0)
+				//{
+				//	cout << "ON: " << on_pixels << ", OFF: " << off_pixels << endl;
+				//}
 				time += dt;
 			}
 			// add a time-step of 100 ms between each run

@@ -1,6 +1,10 @@
 #pragma once
 #include <vector>
+#include "xnet_types.h"
+#include <math.h>
 #include <iostream>
+
+using namespace std;
 
 class BallCamera
 {
@@ -21,14 +25,11 @@ public:
 		calculate_ball_start();
 	}
 
-	vector<vector<bool>> generate_image(float t)
+	vector<vector<bool>> generate_image(Time_t t)
 	{
-		cout << ball_start[0] << "," << ball_start[1] << endl;
-		vector<double> ball_center = {
-			cos(angle)*velocity*(t-start_time) - ball_start[0],
-			sin(angle)*velocity*(t-start_time) - ball_start[1]
-		};
-		cout << ball_center[0] << "," << ball_center[1] << endl;
+		//cout << ball_start[0] << "," << ball_start[1] << endl;
+		auto ball_center = get_ball_center(t);
+		//cout << ball_center[0] << "," << ball_center[1] << endl;
 		vector<vector<bool>> image(image_height,vector<bool>(image_width,false) );
 		//unsigned int cnt = 0;
 		for (int x=0; x<image_width; ++x)
@@ -43,6 +44,14 @@ public:
 			}
 		}
 		return image;
+	}
+
+	vector<double> get_ball_center(Time_t t) const
+	{
+		return {
+			cos(angle)*velocity*(t-start_time) - ball_start[0],
+			sin(angle)*velocity*(t-start_time) - ball_start[1]
+		};
 	}
 
 	float distance(float x, float y, vector<double> center)

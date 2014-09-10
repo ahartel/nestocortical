@@ -77,4 +77,5 @@ for n,neuron in enumerate(neurons):
     plt.title(neuron)
     plt.imshow(complete_image)
 
+plt.colorbar()
 plt.show()

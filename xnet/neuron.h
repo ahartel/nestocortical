@@ -54,6 +54,38 @@ namespace xnet {
 			}
 		}
 
+		Neurons(int num, int num_synapses, float tleak, float vt, float tinh, float trefr) :
+			u(num,0.0),
+			membrane_record(num),
+			tlast_update(num,0.0),
+			tlast_spike(num,0.0),
+			synapse_count(0),
+			tau(tleak),
+			Vt(vt),
+			Tinhibit(tinh),
+			Trefrac(trefr)
+		{
+			this->winhibit = 500.0; //unit?
+			this->num_neurons = num;
+			this->num_synapses = num_synapses;
+			this->record_membrane = false;
+			// not necessary for this type:
+			//this->spikes = [[] for i in range(num)]
+			//this->synapses = [[] for i in range(num)]
+			//this->tlast_update = [0 for i in range(num)]
+			//this->tlast_spike  = [0 for i in range(num)]
+
+			synapses = new Synapse**[num];
+			synapse_count = new int[num];
+
+			for (int i=0; i<num; ++i)
+			{
+				synapse_count[i] = 0;
+				synapses[i] = new Synapse*[num_synapses];
+				this->membrane_record[i].push_back(make_tuple(0.0,0.0,0.0));
+			}
+		}
+
 		~Neurons()
 		{
 			for (int i=0; i<num_neurons; ++i)

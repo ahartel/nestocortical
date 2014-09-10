@@ -51,6 +51,7 @@ namespace xnet {
 		Synapse(unsigned int i,
 				Neurons* neurons_pointer,
 				unsigned int post_neuron,
+				float tltp,
 				float weight=800.0,
 				float aminus=100.0,
 				float aplus=50.0,
@@ -64,9 +65,9 @@ namespace xnet {
 				alpha_minus(aminus),
 				alpha_plus(aplus),
 				wmin(wmin_),
-				wmax(wmax_)
+				wmax(wmax_),
+				TLTP(tltp)
 		{
-			TLTP = 2; // ms
 
 			register_at_neuron();
 		}
@@ -74,6 +75,7 @@ namespace xnet {
 		void set_parameters(unsigned int i,
 				Neurons* neurons_pointer,
 				unsigned int post_neuron,
+				float tltp,
 				float weight=800.0,
 				float aminus=100.0,
 				float aplus=50.0,
@@ -89,7 +91,7 @@ namespace xnet {
 			alpha_plus = aplus;
 			wmin = wmin_;
 			wmax = wmax_;
-			TLTP = 2; // ms
+			TLTP = tltp;
 
 			register_at_neuron();
 		}

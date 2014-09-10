@@ -29,8 +29,10 @@ int main(int argc, char* argv[])
 		max_load_time = atoi(argv[2]);
 
 	auto data_time = load_aer(argv[1], max_load_time);
+	auto max_time = get<1>(data_time.back());
+	cout << data_time.size() << " events in " << max_time << " us" << endl;
 	// init neurons
-	Neurons neurons(num_neurons, num_dvs_addresses);
+	Neurons neurons(num_neurons, num_dvs_addresses,187000.0/*tau*/,1060000.0/*Vt*/,10200.0/*Tinhibit*/,517000.0/*Trefrac*/);
 	// synaptic parameters are random
 	std::default_random_engine generator;
 	std::normal_distribution<float> weight_distribution(800.0,160.0);
@@ -47,7 +49,7 @@ int main(int argc, char* argv[])
 		for (int j=0; j<num_neurons; ++j)
 		{
 			synapses[i][j].set_parameters(
-				        i*num_neurons+j,&neurons,j,
+				        i*num_neurons+j,&neurons,j,14700.0/*TLTP*/,
 						weight_distribution(generator),
 						am_distribution(generator),
 						ap_distribution(generator),
@@ -73,9 +75,8 @@ int main(int argc, char* argv[])
 	//cout << syns.back()->get_psn() << endl;
 	//return 0;
 
-	auto max_time = get<1>(data_time.back());
 
-	for (int run=0; run<2; ++run)
+	for (int run=0; run<5; ++run)
 	{
 		cout << "Run #" << run << endl;
 		for (auto event : data_time)
@@ -92,7 +93,7 @@ int main(int argc, char* argv[])
 				synapses[pixel][j].pre(time);
 			}
 
-			if (time > 0 && time % 10000 == 0)
+			if (time > 0 && time % 100000 == 0)
 				cout << "time = " << time << endl;
 
 		}

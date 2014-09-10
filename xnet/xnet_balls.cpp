@@ -25,12 +25,14 @@ int main(int argc, char* argv[])
 	int num_dvs_addresses = 2 * image_width * image_height;
 	float dt = 1.0;
 	int	num_repetitions = atoi(argv[1]);
+	float velocity = 0.48;
+	float ball_radius = 6.0;
 
 	DVS dvs(image_width,image_height);
 	BallCamera cam {
             3.1416/4.,
-            0.48,
-            6.0,
+            velocity,
+            ball_radius,
             image_width,
             image_height
 	};

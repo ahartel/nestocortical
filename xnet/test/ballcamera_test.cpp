@@ -12,11 +12,13 @@ void foo_bar()
 	int image_width = 16;
 	int image_height = 16;
 	std::default_random_engine generator;
+	float velocity = 0.48;
+	float ball_radius = 6.0;
 
 	BallCamera cam {
 				3.1416/4.,
-				0.48,
-				6.0,
+				velocity,
+				ball_radius,
 				image_width,
 				image_height
 		};
@@ -28,20 +30,20 @@ void foo_bar()
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
 		int angle = angles[angle_dist(generator)];
-		cout << "angle: " << angle << endl;
+		cout << "angle: " << angle << ", time: " << time << endl;
 		cam.reset_and_angle(angle,time);
-		for (float t=0.0; t<100.0; t+=dt)
+		for (float t=0.0; t<(ball_radius+image_width)/velocity*2; t+=dt)
 		{
-			auto center = cam.get_ball_center(t);
+			auto center = cam.get_ball_center(time);
 			cout << center[0] << ", " << center[1] << endl;
 
-			auto image = cam.generate_image(time);
-			int num_on = 0;
-			for (auto row : image)
-				for (auto col : row)
-					if (col > 0)
-						++num_on;
-			cout << num_on <<endl;
+			//auto image = cam.generate_image(time);
+			//int num_on = 0;
+			//for (auto row : image)
+			//	for (auto col : row)
+			//		if (col > 0)
+			//			++num_on;
+			//cout << num_on <<endl;
 
 			time += dt;
 		}

@@ -18,7 +18,7 @@ public:
 	{
 		this->image_width = image_width;
 		this->image_height = image_height;
-		this->angle = angle;
+		this->angle = angle/360.*2.*M_PI;
 		this->velocity = velocity;
 		this->ball_radius = radius;
 		this->start_time = 0;
@@ -27,7 +27,6 @@ public:
 
 	vector<vector<bool>> generate_image(Time_t t)
 	{
-		//cout << ball_start[0] << "," << ball_start[1] << endl;
 		auto ball_center = get_ball_center(t);
 		//cout << ball_center[0] << "," << ball_center[1] << endl;
 		vector<vector<bool>> image(image_height,vector<bool>(image_width,false) );
@@ -63,12 +62,14 @@ public:
 
 	void calculate_ball_start()
 	{
-		ball_start = {cos(angle)*ball_radius*2.0,sin(angle)*ball_radius*2.0};
+		//cout << cos(angle) << "," << sin(angle) << endl;
+		ball_start = {cos(angle)*(image_width+ball_radius),sin(angle)*(image_height+ball_radius)};
+		//cout << ball_start[0] << "," << ball_start[1] << endl;
 	}
 
 	void reset_and_angle(float angle, float t)
 	{
-		this->angle = angle;
+		this->angle = angle/360.*2.*M_PI;
 		this->start_time = t;
 		calculate_ball_start();
 	}

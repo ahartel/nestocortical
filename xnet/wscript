@@ -1,0 +1,30 @@
+
+def options(opt):
+	opt.load('g++')
+
+def configure(conf):
+	conf.load('g++')
+
+	conf.env.CXXFLAGS = ['-std=c++11']
+
+	conf.recurse('test')
+
+def build(bld):
+	bld.recurse('test')
+
+	bld.shlib (
+		source = ['src/neuron.cpp', 'src/synapse.cpp'],
+		target = 'xnet',
+	)
+
+	bld.program (
+		source = ['src/xnet_balls.cpp'],
+		use = ['xnet'],
+		target = 'xnet_balls',
+	)
+
+	bld.program (
+		source = ['src/xnet_traffic.cpp'],
+		use = ['xnet'],
+		target = 'xnet_traffic',
+	)

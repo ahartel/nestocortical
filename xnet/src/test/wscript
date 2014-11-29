@@ -1,7 +1,10 @@
 
 
 def configure(conf):
-	pass
+    pass
 
 def build(bld):
-	pass
+    bld (
+        rule = 'wget -O src/test/events20051219T171855_driving_pasa_freeway.mat.dat https://www.ini.uzh.ch/~tobi/dvs/events20051219T171855%20driving%20pasa%20freeway.mat.dat',
+        target = 'events20051219T171855_driving_pasa_freeway.mat.dat'
+    )

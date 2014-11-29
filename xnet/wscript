@@ -5,15 +5,17 @@ def options(opt):
 def configure(conf):
 	conf.load('g++')
 
-	conf.env.CXXFLAGS = ['-std=c++11']
+	conf.env.CXXFLAGS_XNET = ['-std=c++11']
+	conf.env.INCLUDE_XNET = ['src']
 
-	conf.recurse('test')
+	conf.recurse('src/test')
 
 def build(bld):
-	bld.recurse('test')
+	bld.recurse('src/test')
 
 	bld.shlib (
 		source = ['src/neuron.cpp', 'src/synapse.cpp'],
+		use = 'XNET',
 		target = 'xnet',
 	)
 

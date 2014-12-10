@@ -6,7 +6,6 @@ def configure(conf):
 	conf.load('g++')
 
 	conf.env.CXXFLAGS_XNET = ['-std=c++11']
-	conf.env.INCLUDE_XNET = ['src']
 
 	conf.recurse('src/test')
 
@@ -17,16 +16,19 @@ def build(bld):
 		source = ['src/neuron.cpp', 'src/synapse.cpp'],
 		use = 'XNET',
 		target = 'xnet',
+        install_path = 'lib',
 	)
 
 	bld.program (
 		source = ['src/xnet_balls.cpp'],
 		use = ['xnet'],
 		target = 'xnet_balls',
+        install_path = 'bin',
 	)
 
 	bld.program (
 		source = ['src/xnet_traffic.cpp'],
 		use = ['xnet'],
 		target = 'xnet_traffic',
+        install_path = 'bin',
 	)

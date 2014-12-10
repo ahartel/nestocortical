@@ -1,10 +1,32 @@
 
+def options(opt):
+    opt.load('g++')
 
 def configure(conf):
-    pass
+    conf.load('g++')
+
+    conf.env.CXXFLAGS_XNET = ['-std=c++11']
+    conf.env.INCLUDES_XNET = ['../']
+    conf.env.INCLUDES_GTEST = ['/usr/src/gtest']
+    conf.env.LIB_GTEST = ['pthread']
 
 def build(bld):
     bld (
         rule = 'wget -O src/test/events20051219T171855_driving_pasa_freeway.mat.dat https://www.ini.uzh.ch/~tobi/dvs/events20051219T171855%20driving%20pasa%20freeway.mat.dat',
         target = 'events20051219T171855_driving_pasa_freeway.mat.dat'
     )
+
+    bld.shlib (
+        source = [bld.root.find_node('/usr/src/gtest/src/gtest-all.cc')],
+        target = 'gtest',
+        use = 'GTEST',
+        install_path = 'lib',
+    )
+
+    bld.program (
+        source = 'aer_read_in_test.cpp',
+        target = 'aer_test_in_test',
+        use = ['XNET','gtest'],
+        install_path = 'bin',
+    )
+

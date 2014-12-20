@@ -6,7 +6,7 @@ def configure(conf):
     conf.load('g++')
 
     conf.env.CXXFLAGS_XNET = ['-std=c++11']
-    conf.env.INCLUDES_XNET = ['../']
+    conf.env.INCLUDES_XNET += ['../']
     conf.env.INCLUDES_GTEST = ['/usr/src/gtest']
     conf.env.LIB_GTEST = ['pthread']
 

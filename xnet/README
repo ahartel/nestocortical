@@ -1,0 +1,48 @@
+a synapse should consist of a weight and a last-pre-event-time
+array of synaptic weights
+array of pointers to synaptic weights for pre_events
+array of pointers to synaptic weights for post_events
+
+
+while eventqueue is not empty
+    get next event
+    pop queue
+    update simulation time to next event's time stamp
+    if pre_syn_event
+        foreach synapse in all synapses outgoing from current neuron
+            calculate psp height
+            generate psp event
+            add psp event to queue
+
+            store pre-synaptic spike time of this event as last pre-spike-time
+
+    else if psp_event
+        foreach ???? TODO: Does it make sense to use this event type at all?
+        Or could it be more efficient to directly load the target neuron 
+        while handling the pre_syn_event?
+        It could make sense to have this event type if events were sorted not
+        only by event time but also by target neuron ID.
+
+        load target neuron
+        evolve neuron's membrane
+        if spike has to be generate
+            add pre_syn_event for outgoing synapses
+            add pos_syn_event for incoming synapses
+            reset membrane
+    else if pos_syn_event
+        load weights of all synapses incoming to the neuron that caused the event
+        load last pre-spike-times of all synapses incoming
+        calculate weight update
+        store weights
+
+
+for the open-loop simulations, all input spikes can be pre-loaded into the spike queue at the beginning
+
+for the closed-loop simulations (the pong simulation in particular) the simulation has to be set up multi-threaded
+pong should run in one thread, and the neural network in another thread.
+Therefore, the access to the event queue has to be mutex'ed.
+At every timestep of the pong simulation, it adds events to the queue and pulls motor events from the simulation queue.
+Motor events are pre-synaptic events from a particular neuron.
+Maybe it makes sense to have a seperate motor neuron class that inherits from the neuron class.
+It could also make sense to simulate pong only with the abstract coordinates and without rendering anything, while just recording the neuron-controlled paddle's position.
+The actual visualization could then be done afterwards.

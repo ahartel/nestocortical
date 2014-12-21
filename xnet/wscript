@@ -1,12 +1,11 @@
 
-def options(opt):
-    opt.load('g++')
+def options(opt): opt.load('g++')
 
 def configure(conf):
     conf.load('g++')
 
     conf.env.CXXFLAGS_XNET = ['-std=c++11']
-    conf.env.INCLUDES_XNET = ['./src']
+    conf.env.INCLUDES_XNET = ['./src', './src/event_based/']
 
     conf.recurse('src/test')
 
@@ -35,7 +34,10 @@ def build(bld):
     )
 
     bld.shlib(
-        source = ['src/event_based/simulation_queue.cpp'],
+        source = [
+            'src/event_based/simulation_queue.cpp',
+            'src/event_based/psp_event.cpp',
+        ],
         use = ['xnet'],
         target = 'xnetevent',
         install_path = 'lib',

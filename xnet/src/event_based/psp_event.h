@@ -7,6 +7,7 @@ public:
 	psp_event (Time_t t, Id_t post) : event(t), post_neuron(post)
 	{
 	}
+	virtual void processEvent ();
 private:
 	Id_t post_neuron;
 };

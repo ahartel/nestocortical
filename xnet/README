@@ -36,13 +36,19 @@ while eventqueue is not empty
         store weights
 
 
-for the open-loop simulations, all input spikes can be pre-loaded into the spike queue at the beginning
+for the open-loop simulations, all input spikes can be pre-loaded into the
+spike queue at the beginning
 
-for the closed-loop simulations (the pong simulation in particular) the simulation has to be set up multi-threaded
-pong should run in one thread, and the neural network in another thread.
+for the closed-loop simulations (the pong simulation in particular) the
+simulation has to be set up multi-threaded pong should run in one thread, and
+the neural network in another thread.
 Therefore, the access to the event queue has to be mutex'ed.
-At every timestep of the pong simulation, it adds events to the queue and pulls motor events from the simulation queue.
+At every timestep of the pong simulation, it adds events to the queue and pulls
+motor events from the simulation queue.
 Motor events are pre-synaptic events from a particular neuron.
-Maybe it makes sense to have a seperate motor neuron class that inherits from the neuron class.
-It could also make sense to simulate pong only with the abstract coordinates and without rendering anything, while just recording the neuron-controlled paddle's position.
+Maybe it makes sense to have a seperate motor neuron class that inherits from
+the neuron class.
+It could also make sense to simulate pong only with the abstract coordinates
+and without rendering anything, while just recording the neuron-controlled
+paddle's position.
 The actual visualization could then be done afterwards.

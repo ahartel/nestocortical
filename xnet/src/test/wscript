@@ -6,7 +6,7 @@ def configure(conf):
     conf.load('g++')
 
     conf.env.CXXFLAGS_XNET = ['-std=c++11']
-    conf.env.INCLUDES_XNET += ['../']
+    conf.env.INCLUDES_XNET += ['../', '../event_based']
     conf.env.INCLUDES_GTEST = ['/usr/src/gtest']
     conf.env.LIB_GTEST = ['pthread']
 
@@ -30,3 +30,9 @@ def build(bld):
         install_path = 'bin',
     )
 
+    bld.program (
+        source = 'test_two_neuron.cpp',
+        target = 'test_two_neuron',
+        use = ['XNET','gtest'],
+        install_path = 'bin',
+    )

@@ -33,6 +33,6 @@ def build(bld):
     bld.program (
         source = 'test_two_neuron.cpp',
         target = 'test_two_neuron',
-        use = ['XNET','gtest'],
+        use = ['XNET','gtest','xnetevent'],
         install_path = 'bin',
     )

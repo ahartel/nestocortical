@@ -1,6 +1,8 @@
 #include <vector>
 #include "simulation_queue.h"
 
+using namespace xnet;
+
 int main()
 {
 	Simulation sim;
@@ -8,8 +10,6 @@ int main()
 	auto pop2 = sim.create_population(1);
 	sim.connect_all_to_all(pop1,pop2);
 
-	std::vector<event*> events;
-	events.push_back(new psp_event(0,0));
-	sim.add_events(events);
+	sim.add_event(new psp_event(0,0));
 	sim.run_until_empty();
 }

@@ -1,1 +1,3 @@
- * Implement simulation queue, add simple test with two neurons and one synapse
+* Implement simulation queue, add simple test with two neurons and one synapse
+* Implement stuff with STL containers first, if it's too slow, change to C
+ arrays

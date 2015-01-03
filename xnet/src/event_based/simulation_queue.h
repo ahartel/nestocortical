@@ -1,6 +1,7 @@
 #pragma once
 #include <queue>
 #include "event_based/neuron.h"
+#include "event_based/synapse.h"
 #include "event_based/population.h"
 #include "event_based/event.h"
 #include "event_based/pre_syn_event.h"
@@ -26,6 +27,7 @@ namespace xnet {
 	protected:
 		unsigned int object_counter;
 		std::vector<Neuron> neurons;
+		std::vector<Synapse> synapses;
 		Time_t time;
 		std::priority_queue<event*, std::vector<event*, std::allocator<event*> >,
 			eventComparator> eventQueue;

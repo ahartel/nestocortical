@@ -31,7 +31,7 @@ namespace xnet {
 		{
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
-				synapses.push_back(Synapse(p1.get(i)));
+				synapses.push_back(Synapse(p1.get(i),p2.get(j)));
 			}
 		}
 	}

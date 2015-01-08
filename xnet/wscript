@@ -38,6 +38,8 @@ def build(bld):
             'src/event_based/simulation_queue.cpp',
             'src/event_based/psp_event.cpp',
             'src/event_based/population.cpp',
+            'src/event_based/synapse_range.cpp',
+            'src/event_based/range_type.cpp',
         ],
         use = ['xnet'],
         target = 'xnetevent',

@@ -1,14 +1,34 @@
+Some data structure sketching
+=============================
 a synapse should consist of a weight and a last-pre-event-time
 array of synaptic weights
 array of pointers to synaptic weights for pre_events
 array of pointers to synaptic weights for post_events
 
+Questions:
+----------
+The overarching aim of these questions is to store the data as ideal as
+possible in memory for later efficient serial loading and usage.
 
+1. How to store synapses and pointers to synapses for pre_syn_event?
+a. vector of Synapses where each neuron ID contains a start address and a width
+b. hash map where for each neuron ID there is a seperate vector of synapses
+   stored
+Option a seams to be too painful to implement, and at the end of the day it's
+exactly what a hash map does!
+
+2. How to store post-synaptic neurons for psp_events?
+
+
+Program flow:
+=============
 while eventqueue is not empty
     get next event
     pop queue
     update simulation time to next event's time stamp
     if pre_syn_event
+		get neuron ID
+		load synapse range for this pre-synaptic neuron
         foreach synapse in all synapses outgoing from current neuron
             calculate psp height
             generate psp event

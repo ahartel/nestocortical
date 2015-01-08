@@ -1,13 +1,14 @@
 #pragma once
 #include <cstddef>
+#include "event_based/range_type.h"
 
-class Population
+// Documentation last updated: 2015-01-08
+// A Population holds a start and an end ID of a sequence of neurons
+
+class Population : public RangeType
 {
 public:
+	Population();
 	Population(std::size_t s);
-	void set_end(std::size_t end);
-	std::size_t size() const;
-	std::size_t get(std::size_t pos) const;
 private:
-	std::size_t start,end;
 };

@@ -4,7 +4,7 @@ def options(opt): opt.load('g++')
 def configure(conf):
     conf.load('g++')
 
-    conf.env.CXXFLAGS_XNET = ['-std=c++11']
+    conf.env.CXXFLAGS_XNET = ['-std=c++11', '-DCOUT_ENABLED']
     conf.env.INCLUDES_XNET = ['./src', './src/event_based/']
 
     conf.recurse('src/test')
@@ -15,20 +15,20 @@ def build(bld):
     bld.shlib (
         source = ['src/neuron.cpp', 'src/synapse.cpp'],
         use = 'XNET',
-        target = 'xnet',
+        target = 'xnet_old',
         install_path = 'lib',
     )
 
     bld.program (
         source = ['src/xnet_balls.cpp'],
-        use = ['xnet'],
+        use = ['xnet_old'],
         target = 'xnet_balls',
         install_path = 'bin',
     )
 
     bld.program (
         source = ['src/xnet_traffic.cpp'],
-        use = ['xnet'],
+        use = ['xnet_old'],
         target = 'xnet_traffic',
         install_path = 'bin',
     )
@@ -37,11 +37,15 @@ def build(bld):
         source = [
             'src/event_based/simulation_queue.cpp',
             'src/event_based/psp_event.cpp',
+            'src/event_based/pre_syn_event.cpp',
             'src/event_based/population.cpp',
             'src/event_based/synapse_range.cpp',
             'src/event_based/range_type.cpp',
+            'src/event_based/synapse.cpp',
+            'src/event_based/neuron.cpp',
+            'src/event_based/weight.cpp',
         ],
-        use = ['xnet'],
+        use = ['XNET'],
         target = 'xnetevent',
         install_path = 'lib',
     )

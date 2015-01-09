@@ -1,9 +1,12 @@
 #include "event_based/population.h"
 
-Population::Population() : RangeType()
+namespace xnet
 {
-}
+	Population::Population() : RangeType()
+	{
+	}
 
-Population::Population(std::size_t s) : RangeType(s)
-{
+	Population::Population(std::size_t s) : RangeType(s)
+	{
+	}
 }

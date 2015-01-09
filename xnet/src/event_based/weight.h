@@ -5,9 +5,11 @@ namespace xnet {
 	class Weight
 	{
 	public:
-		Weight(Weight_t w, float g) : weight(w), gmax(g) {};
+		Weight();
+		Weight(Weight_t w, float g);
+		Current_t calc_current();
 	private:
 		Weight_t weight;
-		float gmax;
+		Current_t gmax;
 	};
 }

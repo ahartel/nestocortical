@@ -5,8 +5,8 @@ def options(opt):
 def configure(conf):
     conf.load('g++')
 
-    conf.env.CXXFLAGS_XNET = ['-std=c++11']
-    conf.env.INCLUDES_XNET += ['../', '../event_based']
+    conf.env.CXXFLAGS_XNET_TEST = ['-std=c++11']
+    conf.env.INCLUDES_XNET_TEST += ['../', '../event_based']
     conf.env.INCLUDES_GTEST = ['/usr/src/gtest']
     conf.env.LIB_GTEST = ['pthread']
 
@@ -26,13 +26,13 @@ def build(bld):
     bld.program (
         source = 'aer_read_in_test.cpp',
         target = 'aer_test_in_test',
-        use = ['XNET','gtest'],
+        use = ['XNET_TEST','gtest'],
         install_path = 'bin',
     )
 
     bld.program (
         source = 'test_two_neuron.cpp',
         target = 'test_two_neuron',
-        use = ['XNET','gtest','xnetevent'],
+        use = ['XNET_TEST','gtest','xnetevent'],
         install_path = 'bin',
     )

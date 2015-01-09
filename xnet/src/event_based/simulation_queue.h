@@ -28,6 +28,9 @@ namespace xnet {
 		void connect_all_to_all_identical(Population& p1, Population& p2, Weight w);
 		void add_event(event * e);
 		void run_until_empty();
+		SynapseRange get_synapse_range(Id_t const& neuron) const;
+		Synapse* get_synapse_pointer(Id_t const& synapse);
+		Time_t get_time() const;
 	protected:
 		std::vector<Neuron> neurons;
 		std::vector<Synapse> synapses;

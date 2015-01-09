@@ -1,4 +1,5 @@
 * Implement simulation queue, add simple test with two neurons and one synapse
 * Implement stuff with STL containers first, if it's too slow, change to C
  arrays
-* Use namespace xnet everywhere!
+* The logger and the simulation queue need to be global variables. At least somehow, the events need access to them.
+  The event-based ice cream shop example program uses a global variable for the simulation queue object.

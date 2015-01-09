@@ -1,5 +1,8 @@
 #include "event_based/synapse_range.h"
 
-SynapseRange::SynapseRange() : RangeType()
+namespace xnet
 {
+	SynapseRange::SynapseRange() : RangeType()
+	{
+	}
 }

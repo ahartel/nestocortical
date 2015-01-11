@@ -29,7 +29,7 @@ TEST(AER_DATA,READ)
 	}
 	cout << delta_t << endl;
 	cout << data_time.size() << " in " << (last_spike_time-first_spike_time)/1.0e6 << " seconds" << endl;
-	cout << "average spike rate: " << float(data_time.size())/(last_spike_time-first_spike_time) << " Hz" << endl;
+	cout << "average spike rate: " << float(data_time.size())/(last_spike_time-first_spike_time)*1.0e6 << " Hz" << endl;
 }
 
 

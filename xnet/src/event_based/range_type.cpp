@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include "logger.h"
 #include "event_based/range_type.h"
 
 namespace xnet
@@ -42,8 +43,12 @@ namespace xnet
 
 	std::size_t RangeType::get(std::size_t pos) const
 	{
+
+		if (_size < 0)
+			throw std::out_of_range("Start or End in RangeType not fully defined.");
 		if (_start + pos >= _end)
 			throw std::out_of_range("RangeType range exceeded");
+
 		return _start + pos;
 	}
 
@@ -55,5 +60,10 @@ namespace xnet
 	std::size_t RangeType::end() const
 	{
 		return _end;
+	}
+
+	bool RangeType::non_empty() const
+	{
+		return (_start >= 0) && (_end >= 0) && (_end >= _start);
 	}
 }

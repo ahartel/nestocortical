@@ -6,9 +6,11 @@
 #include <string>
 #include <iostream>
 
+#include "xnet_types.h"
+
 using namespace std;
 
-typedef vector<tuple<unsigned int, unsigned int>> AERData;
+typedef vector<Spike_t> AERData;
 
 void load_cache(string filename, AERData& data_time)
 {

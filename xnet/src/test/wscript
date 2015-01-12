@@ -27,12 +27,20 @@ def build(bld):
         source = 'aer_read_in_test.cpp',
         target = 'aer_test_in_test',
         use = ['XNET_TEST','gtest'],
-        install_path = 'bin',
+        install_path = 'bin/tests',
     )
 
     bld.program (
-        source = 'test_two_neuron.cpp',
-        target = 'test_two_neuron',
+        source = 'simple_transmit.cpp',
+        target = 'simple_transmit',
         use = ['XNET_TEST','gtest','xnetevent'],
-        install_path = 'bin',
+        install_path = 'bin/tests',
     )
+
+    bld.program (
+        source = 'random_init.cpp',
+        target = 'random_init',
+        use = ['XNET_TEST','gtest','xnetevent'],
+        install_path = 'bin/tests',
+    )
+

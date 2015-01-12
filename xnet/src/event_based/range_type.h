@@ -15,8 +15,10 @@ namespace xnet
 		std::size_t get(std::size_t pos) const;
 		std::size_t begin() const;
 		std::size_t end() const;
+		bool non_empty() const;
 	protected:
 		void update_size();
-		std::size_t _start, _end, _size;
+		int _start, _end;
+		int _size;
 	};
 }

@@ -43,6 +43,7 @@ def build(bld):
             'src/event_based/range_type.cpp',
             'src/event_based/synapse.cpp',
             'src/event_based/neuron.cpp',
+            'src/event_based/neuron_params.cpp',
             'src/event_based/weight.cpp',
         ],
         use = ['XNET'],

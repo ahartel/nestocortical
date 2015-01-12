@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include "xnet_types.h"
 
 namespace xnet {
@@ -6,10 +7,11 @@ namespace xnet {
 	{
 	public:
 		Weight();
-		Weight(Weight_t w, float g);
+		Weight(float g);
 		Current_t calc_current();
 	private:
-		Weight_t weight;
+		//static const Weight_t wmax = std::pow(2,sizeof(Weight_t))-1;
+		//Weight_t weight;
 		Current_t gmax;
 	};
 }

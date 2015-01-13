@@ -1,8 +1,5 @@
 #include <cmath>
 #include "neuron.h"
-#include "event_based/simulation_queue.h"
-
-extern xnet::Simulation theSimulation;
 
 namespace xnet
 {
@@ -13,15 +10,19 @@ namespace xnet
 	{
 	}
 
-	void Neuron::add_current_evolve(Time_t t, Id_t id, Current_t c)
+	bool Neuron::add_current_evolve(Time_t t, Id_t id, Current_t c)
 	{
+		bool fired = false;
+
 		u += u*std::exp(-(t-last_spike_time)/params.tau_m) + c;
 		if (u >= params.V_th)
 		{
 			// emit spike
-			theSimulation.add_event(new pre_syn_event(t,id));
+			fired = true;
 			// reset u
 			u = 0;
 		}
+
+		return fired;
 	}
 }

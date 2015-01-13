@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include "weight.h"
+#include "psp_event.h"
 
 namespace xnet {
 	//template <class WT>
@@ -8,7 +9,9 @@ namespace xnet {
 	{
 	public:
 		Synapse(std::size_t pre, std::size_t post);
-		void generate_psp_event();
+		//psp_event* generate_psp_event();
+		Id_t get_post_neuron() const;
+		Current_t get_current() const;
 	private:
 		Id_t pre_neuron, post_neuron;
 		//WT _weight;

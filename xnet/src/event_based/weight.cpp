@@ -8,7 +8,7 @@ namespace xnet
 	Weight::Weight(float g) : gmax(g)
 	{
 	};
-	Current_t Weight::calc_current()
+	Current_t Weight::calc_current() const
 	{
 		//return weight/wmax*gmax;
 		return gmax;

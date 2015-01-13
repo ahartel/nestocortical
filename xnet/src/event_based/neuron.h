@@ -7,7 +7,7 @@ namespace xnet {
 	{
 	public:
 		Neuron(Neuron_params const& p);
-		void add_current_evolve(Time_t t, Id_t id, Current_t c);
+		bool add_current_evolve(Time_t t, Id_t id, Current_t c);
 	private:
 		Membrane_t u;
 		Neuron_params params;

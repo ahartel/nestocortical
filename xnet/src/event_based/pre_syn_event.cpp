@@ -1,12 +1,10 @@
 #include "logger.h"
 #include "pre_syn_event.h"
-#include "simulation_queue.h"
 #include "synapse_range.h"
-
-extern xnet::Simulation theSimulation;
 
 namespace xnet
 {
+/*
 	void pre_syn_event::processEvent()
 	{
 		// add this spike to the global spike list
@@ -25,4 +23,5 @@ namespace xnet
 		else
 			LOGGER("Processing pre_syn_event for neuron. Empty, not doing anything.");
 	};
+	*/
 }

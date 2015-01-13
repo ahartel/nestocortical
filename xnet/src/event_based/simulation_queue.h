@@ -41,6 +41,8 @@ namespace xnet {
 		void add_spike(Time_t t, Id_t nrn);
 		std::vector<Spike_t>& get_spikes();
 	protected:
+		void processEvent(event* ev);
+
 		std::default_random_engine generator;
 		std::vector<Neuron> neurons;
 		std::vector<Synapse> synapses;

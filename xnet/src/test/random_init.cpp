@@ -8,7 +8,7 @@ using namespace xnet;
 
 TEST(SIM,RANDOM_INIT)
 {
-	extern Simulation theSimulation;
+	Simulation theSimulation;
 
 	auto pop1 = theSimulation.create_population_uniform(1,0.0,1000.0,1.0,5.0);
 	auto pop2 = theSimulation.create_population_normal(2,1000.0,200.0,3.0,1.0);

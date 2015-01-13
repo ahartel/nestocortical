@@ -10,9 +10,50 @@ namespace xnet {
 			event * nextEvent = eventQueue.top();
 			eventQueue.pop();
 			time = nextEvent->time;
-			nextEvent->processEvent();
+			//nextEvent->processEvent();
+			processEvent(nextEvent);
 			delete nextEvent;
 		}
+	}
+
+	void Simulation::processEvent(event* ev) {
+		auto type = ev->get_type();
+		Id_t linked_object = ev->get_linked_object_id();
+		if (type == EventType::PRE)
+		{
+			// add this spike to the global spike list
+			add_spike(time,linked_object);
+			// check if there are post-synaptic neurons to this neuron
+			SynapseRange synrange = get_synapse_range(linked_object);
+			if (synrange.non_empty())
+			{
+				LOGGER("Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
+				for (std::size_t i=synrange.begin();i<synrange.end();++i)
+				{
+					Synapse* syn = get_synapse_pointer(i);
+					add_event(new psp_event(time,syn->get_post_neuron(),syn->get_current()));
+				}
+			}
+			else
+				LOGGER("Processing pre_syn_event for neuron. Empty, not doing anything.");
+		}
+		else if (type == EventType::PSP)
+		{
+			psp_event* psp_evt = static_cast<psp_event*>(ev);
+
+			LOGGER("Processing psp event for post-synaptic neuron " << linked_object);
+			Neuron* neuron = get_neuron_pointer(linked_object);
+			bool fired = neuron->add_current_evolve(time,linked_object,psp_evt->get_current());
+			if (fired)
+			{
+				add_event(new pre_syn_event(time,linked_object));
+			}
+		}
+		//	case EventType::PST:
+		//	break;
+		//	case EventType::SIL:
+		//	break;
+		//}
 	}
 
 	Population Simulation::create_population_start()

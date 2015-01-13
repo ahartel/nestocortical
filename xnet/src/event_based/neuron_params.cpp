@@ -2,9 +2,10 @@
 
 namespace xnet
 {
-	Neuron_params::Neuron_params(Membrane_t th, Timeconst_t tm) :
+	Neuron_params::Neuron_params(Membrane_t th, Timeconst_t tm, Timeconst_t tr) :
 		V_th(th),
-		tau_m(tm)
+		tau_mem(tm),
+		tau_ref(tr)
 	{
 	}
 }

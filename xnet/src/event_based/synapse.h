@@ -8,7 +8,7 @@ namespace xnet {
 	class Synapse
 	{
 	public:
-		Synapse(std::size_t pre, std::size_t post);
+		Synapse(std::size_t pre, std::size_t post, Weight const& w);
 		//psp_event* generate_psp_event();
 		Id_t get_post_neuron() const;
 		Current_t get_current() const;

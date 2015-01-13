@@ -1,3 +1,4 @@
-* Implement synapse paremter settings into Synapse class and connection functions in simulation_queue.
 * Implement inhibition
 * Implement STDP
+* Add Templating of Neuron and Synapse types
+* Start with templating Neuron type and add a placeholder (input) neuron type

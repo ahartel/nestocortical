@@ -1,6 +1,7 @@
 #pragma once
 #include <queue>
 #include <random>
+#include <string>
 #include "event_based/weight.h"
 #include "event_based/neuron.h"
 #include "event_based/neuron_params.h"
@@ -21,25 +22,27 @@ namespace xnet {
 			eventQueue()
 		{
 		}
-		void run();
-		void scheduleEvent(event* newEvent)
-		{
-			eventQueue.push(newEvent);
-		}
+		void run(size_t num);
+		// population stuff
 		Population create_population_start();
 		void create_population_add_neuron(Neuron_params const& p);
 		Population create_population_fixed(std::size_t s, Neuron_params const& params);
-		Population create_population_uniform(std::size_t s, Membrane_t th_high, Membrane_t th_low, Timeconst_t tm_low, Timeconst_t tm_high);
-		Population create_population_normal(std::size_t s, Membrane_t th_mean, Membrane_t th_std, Timeconst_t tm_mean, Timeconst_t tm_std);
-		void connect_all_to_all_identical(Population& p1, Population& p2, Weight w);
+		Population create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr);
+		Population create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr);
+		// connection stuff
+		void connect_all_to_all_identical(Population& p1, Population& p2, Weight const& w);
+		void connect_all_to_all_normal(Population& p1, Population& p2, NormalRange_t wmin, NormalRange_t wmax, NormalRange_t winit, NormalRange_t ap, NormalRange_t am);
+
 		void add_event(event * e);
 		void run_until_empty();
+		void run_one_event();
 		SynapseRange get_synapse_range(Id_t const& neuron) const;
 		Synapse* get_synapse_pointer(Id_t const& synapse);
 		Neuron* get_neuron_pointer(Id_t const& nrn);
 		Time_t get_time() const;
 		void add_spike(Time_t t, Id_t nrn);
 		std::vector<Spike_t>& get_spikes();
+		void print_spikes(std::string filename);
 	protected:
 		void processEvent(event* ev);
 

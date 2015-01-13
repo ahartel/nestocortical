@@ -2,15 +2,17 @@
 
 namespace xnet
 {
-	Weight::Weight() : /*weight(255),*/ gmax(1000)
-	{
-	};
-	Weight::Weight(float g) : gmax(g)
+	Weight::Weight(Current_t wgt, Current_t wmi, Current_t wma, Current_t apl, Current_t ami) :
+		w(wgt),
+		wmin(wmi),
+		wmax(wma),
+		ap(apl),
+		am(ami)
 	{
 	};
 	Current_t Weight::calc_current() const
 	{
 		//return weight/wmax*gmax;
-		return gmax;
+		return w;
 	}
 }

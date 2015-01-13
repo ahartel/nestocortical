@@ -21,14 +21,14 @@ def build(bld):
 
     bld.program (
         source = ['src/experiments/xnet_old_balls.cpp'],
-        use = ['xnet_old'],
+        use = ['XNET', 'xnet_old'],
         target = 'xnet_old_balls',
         install_path = 'bin',
     )
 
     bld.program (
         source = ['src/experiments/xnet_old_traffic.cpp'],
-        use = ['xnet_old'],
+        use = ['XNET', 'xnet_old'],
         target = 'xnet_old_traffic',
         install_path = 'bin',
     )
@@ -49,4 +49,11 @@ def build(bld):
         use = ['XNET'],
         target = 'xnetevent',
         install_path = 'lib',
+    )
+
+    bld.program (
+        source = ['src/experiments/xnet_balls.cpp'],
+        use = ['xnet','xnetevent'],
+        target = 'xnet_balls',
+        install_path = 'bin',
     )

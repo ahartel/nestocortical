@@ -6,12 +6,14 @@ namespace xnet {
 	class Weight
 	{
 	public:
-		Weight();
-		Weight(float g);
+		Weight(Current_t w, Current_t wmin, Current_t wmax, Current_t ap, Current_t am);
 		Current_t calc_current() const;
 	private:
 		//static const Weight_t wmax = std::pow(2,sizeof(Weight_t))-1;
-		//Weight_t weight;
-		Current_t gmax;
+		Current_t w;
+		Current_t wmin;
+		Current_t wmax;
+		Current_t ap;
+		Current_t am;
 	};
 }

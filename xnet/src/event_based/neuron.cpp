@@ -14,7 +14,7 @@ namespace xnet
 	{
 		bool fired = false;
 
-		u += u*std::exp(-(t-last_spike_time)/params.tau_m) + c;
+		u += u*std::exp(-(t-last_spike_time)/params.tau_mem) + c;
 		if (u >= params.V_th)
 		{
 			// emit spike

@@ -20,16 +20,16 @@ def build(bld):
     )
 
     bld.program (
-        source = ['src/xnet_balls.cpp'],
+        source = ['src/experiments/xnet_old_balls.cpp'],
         use = ['xnet_old'],
-        target = 'xnet_balls',
+        target = 'xnet_old_balls',
         install_path = 'bin',
     )
 
     bld.program (
-        source = ['src/xnet_traffic.cpp'],
+        source = ['src/experiments/xnet_old_traffic.cpp'],
         use = ['xnet_old'],
-        target = 'xnet_traffic',
+        target = 'xnet_old_traffic',
         install_path = 'bin',
     )
 

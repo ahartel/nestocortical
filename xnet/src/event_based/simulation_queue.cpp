@@ -39,9 +39,10 @@ namespace xnet {
 			if (synrange.non_empty())
 			{
 				LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
-				for (std::size_t i=synrange.begin();i<synrange.end();++i)
+				for (std::size_t i=synrange.begin(); i<synrange.end(); ++i)
 				{
 					Synapse* syn = get_synapse_pointer(i);
+					LOGGER("Current: " << syn->get_current());
 					add_event(new psp_event(time,syn->get_post_neuron(),syn->get_current()));
 				}
 			}
@@ -54,9 +55,10 @@ namespace xnet {
 
 			LOGGER("@" << time << " Processing psp event for post-synaptic neuron " << linked_object);
 			Neuron* neuron = get_neuron_pointer(linked_object);
-			bool fired = neuron->add_current_evolve(time,linked_object,psp_evt->get_current());
+			bool fired = neuron->add_current_evolve(time,psp_evt->get_current());
 			if (fired)
 			{
+				LOGGER("Neuron " << linked_object << " fired");
 				add_event(new pre_syn_event(time,linked_object));
 			}
 		}

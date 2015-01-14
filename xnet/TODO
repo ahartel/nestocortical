@@ -1,4 +1,4 @@
+* Get the time units and neuron and synapse values right for balls program!!! 
 * Implement inhibition
 * Implement STDP
 * Add Templating of Neuron and Synapse types
-* Start with templating Neuron type and add a placeholder (input) neuron type

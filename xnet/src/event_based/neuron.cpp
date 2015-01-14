@@ -1,5 +1,6 @@
 #include <cmath>
 #include "neuron.h"
+#include "logger.h"
 
 namespace xnet
 {
@@ -10,11 +11,14 @@ namespace xnet
 	{
 	}
 
-	bool Neuron::add_current_evolve(Time_t t, Id_t id, Current_t c)
+	bool Neuron::add_current_evolve(Time_t t, Current_t c)
 	{
 		bool fired = false;
 
-		u += u*std::exp(-(t-last_spike_time)/params.tau_mem) + c;
+		LOGGER("c=" << c << ", u=" << u);
+		u = u * std::exp(-1.0*(float(t-last_spike_time)/params.tau_mem)) + c;
+		LOGGER("c=" << c << ", u=" << u);
+
 		if (u >= params.V_th)
 		{
 			// emit spike

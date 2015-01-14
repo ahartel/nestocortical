@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
 				//	}
 				//}
 
-				auto image_diff = dvs.calculate_spikes(image);
+				auto image_diff = dvs.calculate_image_diff(image);
 				for (int row=0; row<image_height; ++row)
 				{
 					for (int col=0; col<image_width; ++col)
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
 								synapses[(row*image_width+col)*2][j].pre(time);
 //							#print row,col,pixel
 						}
-						else if (image_diff[col][row] < 0)
+						else if (image_diff[row][col] < 0)
 						{
 							off_pixels += 1;
 

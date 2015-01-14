@@ -44,3 +44,9 @@ def build(bld):
         install_path = 'bin/tests',
     )
 
+    bld.program (
+        source = 'test_ball_trajectory.cpp',
+        target = 'ball_trajectory',
+        use = ['XNET_TEST','gtest','xnetevent'],
+        install_path = 'bin/tests',
+    )

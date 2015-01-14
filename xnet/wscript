@@ -13,8 +13,21 @@ def build(bld):
     bld.recurse('src/test')
 
     bld.shlib (
-        source = ['src/neuron.cpp', 'src/synapse.cpp'],
+        source = [
+            'src/BallCamera.cpp',
+            'src/DVS.cpp',
+        ],
         use = 'XNET',
+        target = 'xnet_input',
+        install_path = 'lib',
+    )
+
+    bld.shlib (
+        source = [
+            'src/neuron.cpp',
+            'src/synapse.cpp',
+        ],
+        use = ['XNET', 'xnet_input'],
         target = 'xnet_old',
         install_path = 'lib',
     )
@@ -46,7 +59,7 @@ def build(bld):
             'src/event_based/neuron_params.cpp',
             'src/event_based/weight.cpp',
         ],
-        use = ['XNET'],
+        use = ['XNET','xnet_input'],
         target = 'xnetevent',
         install_path = 'lib',
     )

@@ -9,14 +9,14 @@ namespace xnet {
 
 	void Simulation::run_one_event()
 	{
-		LOGGER("eventQueue size: " << eventQueue.size());
+		//LOGGER("eventQueue size: " << eventQueue.size());
 		event * nextEvent = eventQueue.top();
 		eventQueue.pop();
 		time = nextEvent->time;
 		//nextEvent->processEvent();
 		processEvent(nextEvent);
 		delete nextEvent;
-		LOGGER("eventQueue size: " << eventQueue.size());
+		//LOGGER("eventQueue size: " << eventQueue.size());
 	}
 
 	void Simulation::run(size_t num) {
@@ -43,7 +43,10 @@ namespace xnet {
 				{
 					Synapse* syn = get_synapse_pointer(i);
 					LOGGER("Current: " << syn->get_current());
-					add_event(new psp_event(time,syn->get_post_neuron(),syn->get_current()));
+					if (syn->hard_inhibit())
+						add_event(new silence_event(time,syn->get_post_neuron()));
+					else
+						add_event(new psp_event(time,syn->get_post_neuron(),syn->get_current()));
 				}
 			}
 			else
@@ -64,9 +67,12 @@ namespace xnet {
 		}
 		//	case EventType::PST:
 		//	break;
-		//	case EventType::SIL:
-		//	break;
-		//}
+		else if (type == EventType::SIL)
+		{
+			LOGGER("@" << time << " Processing silence event for post-synaptic neuron " << linked_object);
+			Neuron* neuron = get_neuron_pointer(linked_object);
+			neuron->silence_neuron(time);
+		}
 	}
 
 	Population Simulation::create_population_start()
@@ -99,7 +105,7 @@ namespace xnet {
 		return pop;
 	}
 
-	Population Simulation::create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr)
+	Population Simulation::create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr, UniformRange_t ti)
 	{
 		/* Create a population and a number of s neurons.
 			The population represents the range of the
@@ -110,16 +116,23 @@ namespace xnet {
 		std::uniform_real_distribution<Membrane_t> V_th(th.low(),th.high());
 		std::uniform_real_distribution<Timeconst_t> tau_mem(tm.low(),tm.high());
 		std::uniform_real_distribution<Timeconst_t> tau_ref(tr.low(),tr.high());
+		std::uniform_real_distribution<Timeconst_t> Tinhibit(ti.low(),ti.high());
+
 		Population pop = create_population_start();
 		for (unsigned int i=0;i<s;++i)
 		{
-			create_population_add_neuron({V_th(generator),tau_mem(generator),tau_ref(generator)});
+			create_population_add_neuron({
+									V_th(generator),
+									tau_mem(generator),
+									tau_ref(generator),
+									Tinhibit(generator)
+								});
 		}
 		pop.set_end(neurons.size()-1);
 		return pop;
 	}
 
-	Population Simulation::create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr)
+	Population Simulation::create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr, NormalRange_t ti)
 	{
 		/* Create a population and a number of s neurons.
 			The population represents the range of the
@@ -130,16 +143,26 @@ namespace xnet {
 		std::normal_distribution<Membrane_t> V_th(th.mean(),th.std());
 		std::normal_distribution<Timeconst_t> tau_mem(tm.mean(),tm.std());
 		std::normal_distribution<Timeconst_t> tau_ref(tr.mean(),tr.std());
+		std::normal_distribution<Timeconst_t> Tinhibit(ti.mean(),ti.std());
+
 		Population pop = create_population_start();
 		for (unsigned int i=0;i<s;++i)
 		{
-			create_population_add_neuron({V_th(generator),tau_mem(generator),tau_ref(generator)});
+			create_population_add_neuron({
+									V_th(generator),
+									tau_mem(generator),
+									tau_ref(generator),
+									Tinhibit(generator)
+								});
 		}
 		pop.set_end(neurons.size()-1);
 		return pop;
 	}
 
-	void Simulation::connect_all_to_all_identical(Population& p1, Population& p2, Weight const& w)
+	void Simulation::connect_all_to_all_identical(
+		Population const& p1,
+		Population const& p2,
+		Weight const& w)
 	{
 		// iterate over source neurons
 		for (unsigned int i=0; i<p1.size(); ++i)
@@ -156,9 +179,27 @@ namespace xnet {
 		}
 	}
 
+	void Simulation::connect_all_to_all_wta(Population const& p)
+	{
+		// iterate over source neurons
+		for (unsigned int i=0; i<p.size(); ++i)
+		{
+			auto p1_index = p.get(i);
+			// store synapse range in pre_syn_lookup
+			pre_syn_lookup[p1_index].set_start(synapses.size());
+			// iterate over target neurons
+			for (unsigned int j=0; j<p.size(); ++j)
+			{
+				if (i!=j)
+					synapses.push_back(Synapse(p1_index,p.get(j),{},true));
+			}
+			pre_syn_lookup[p1_index].set_end(synapses.size()-1);
+		}
+	}
+
 	void Simulation::connect_all_to_all_normal(
-		Population& p1,
-		Population& p2,
+		Population const& p1,
+		Population const& p2,
 		NormalRange_t wmin,
 		NormalRange_t wmax,
 		NormalRange_t winit,

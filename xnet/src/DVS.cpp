@@ -29,17 +29,20 @@ using namespace std;
 		// This is deliberate code copying from calculate_image_diff,
 		// but I seriuosly don't want to iterate twice over the image space
 		vector<int> spikes;
+		vector<vector<int>> image_diff (image_height,vector<int>(image_width,0) );
 		for (int x=0; x<image_width; ++x)
 		{
 			for (int y=0; y<image_height; ++y)
 			{
-				int diff = int(image[y][x]) - int(previous_image[y][x]);
-				if (diff > 0)
+				image_diff[y][x] = int(image[y][x]) - int(previous_image[y][x]);
+				if (image_diff[y][x] > 0)
 					spikes.push_back((y*image_height+x)*2);
-				else if (diff < 0)
+				else if (image_diff[y][x] < 0)
 					spikes.push_back((y*image_height+x)*2+1);
 			}
 		}
+
+		//print_image_diff(image_diff);
 
 		previous_image = image;
 		return spikes;

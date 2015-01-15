@@ -1,4 +1,3 @@
-* Get the time units and neuron and synapse values right for balls program!!! 
-* Implement inhibition
 * Implement STDP
+* Implement weight dumping
 * Add Templating of Neuron and Synapse types

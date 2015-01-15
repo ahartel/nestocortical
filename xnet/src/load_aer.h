@@ -27,7 +27,7 @@ void cache(string filename, AERData const& data_time)
 
 }
 
-vector<tuple<unsigned int,unsigned int>> load_aer(string filename, int max_time=-1)
+vector<Spike_t> load_aer(string filename, int max_time=-1)
 {
 	std::ifstream file(filename, std::ios::binary);
 

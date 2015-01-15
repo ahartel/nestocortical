@@ -6,6 +6,7 @@ namespace xnet {
 	class Weight
 	{
 	public:
+		Weight();
 		Weight(Current_t w, Current_t wmin, Current_t wmax, Current_t ap, Current_t am);
 		Current_t calc_current() const;
 	private:

@@ -81,8 +81,8 @@ int main(int argc, char* argv[])
 		cout << "Run #" << run << endl;
 		for (auto event : data_time)
 		{
-			auto time  = get<1>(event) + max_time*run;
-			auto pixel = get<0>(event);
+			auto time  = get<0>(event) + max_time*run;
+			auto pixel = get<1>(event);
 
 			for (int j=0; j<num_neurons; ++j)//Synapse synapse : synapses[pixel])
 			{
@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
 				synapses[pixel][j].pre(time);
 			}
 
-			if (time > 0 && time % 100000 == 0)
-				cout << "time = " << time << endl;
+			//if (time > 0 && time % 100000 == 0)
+			//	cout << "time = " << time << endl;
 
 		}
 	}

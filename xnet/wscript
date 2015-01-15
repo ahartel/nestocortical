@@ -1,10 +1,14 @@
 
-def options(opt): opt.load('g++')
+def options(opt):
+    opt.load('g++')
+    opt.add_option('--no-log', action='store_true', default=False, dest='nolog')
 
 def configure(conf):
     conf.load('g++')
 
-    conf.env.CXXFLAGS_XNET = ['-std=c++11', '-DCOUT_ENABLED']
+    conf.env.CXXFLAGS_XNET = ['-std=c++11']
+    if not conf.options.nolog:
+        conf.env.CXXFLAGS_XNET.append('-DCOUT_ENABLED')
     conf.env.INCLUDES_XNET = ['./src', './src/event_based/']
 
     conf.recurse('src/test')
@@ -50,6 +54,7 @@ def build(bld):
         source = [
             'src/event_based/simulation_queue.cpp',
             'src/event_based/psp_event.cpp',
+            'src/event_based/silence_event.cpp',
             'src/event_based/pre_syn_event.cpp',
             'src/event_based/population.cpp',
             'src/event_based/synapse_range.cpp',

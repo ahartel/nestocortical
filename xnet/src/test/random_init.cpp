@@ -10,8 +10,8 @@ TEST(SIM,RANDOM_INIT)
 {
 	Simulation theSimulation;
 
-	auto pop1 = theSimulation.create_population_uniform(1,{0.0,1000.0},{1.0,5.0},{1.0,2.0});
-	auto pop2 = theSimulation.create_population_normal(2,{1000.0,200.0},{3.0,1.0},{1.0,0.2});
+	auto pop1 = theSimulation.create_population_uniform(1,{0.0,1000.0},{1.0,5.0},{1.0,2.0},{0.001,0.0002});
+	auto pop2 = theSimulation.create_population_normal(2,{1000.0,200.0},{3.0,1.0},{1.0,0.2},{0.001,0.0002});
 	theSimulation.connect_all_to_all_identical(pop1,pop2,{1.0,1.0,10.0,1.0,1.0});
 
 	theSimulation.add_event(new pre_syn_event(0,0));

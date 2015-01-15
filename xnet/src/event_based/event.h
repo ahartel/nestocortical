@@ -3,7 +3,7 @@
 
 namespace xnet
 {
-	enum class EventType {PRE, PSP, PST, SIL};
+	enum EventType {SIL, PST, PRE, PSP};
 
 	class event {
 	public:
@@ -27,7 +27,10 @@ namespace xnet
 
 	struct eventComparator {
 	  bool operator() (const event * left, const event * right) const {
-		return left->time > right->time;
+		if (left->time == right->time)
+			return left->get_type() > right->get_type();
+		else
+			return left->time > right->time;
 	  }
 	};
 }

@@ -5,4 +5,8 @@ namespace xnet
 	SynapseRange::SynapseRange() : RangeType()
 	{
 	}
+
+	SynapseRange::SynapseRange(size_t s) : RangeType(s)
+	{
+	}
 }

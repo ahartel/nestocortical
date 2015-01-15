@@ -35,22 +35,27 @@ namespace xnet {
 			// add this spike to the global spike list
 			add_spike(time,linked_object);
 			// check if there are post-synaptic neurons to this neuron
-			SynapseRange synrange = get_synapse_range(linked_object);
-			if (synrange.non_empty())
+			for (SynapseRange synrange : get_synapse_ranges(linked_object))
 			{
-				LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
-				for (std::size_t i=synrange.begin(); i<synrange.end(); ++i)
+				if (synrange.non_empty())
 				{
-					Synapse* syn = get_synapse_pointer(i);
-					LOGGER("Current: " << syn->get_current());
-					if (syn->hard_inhibit())
-						add_event(new silence_event(time,syn->get_post_neuron()));
-					else
-						add_event(new psp_event(time,syn->get_post_neuron(),syn->get_current()));
+					LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
+					for (std::size_t i=synrange.begin(); i<synrange.end(); ++i)
+					{
+						Synapse* syn = get_synapse_pointer(i);
+						if (syn->hard_inhibit())
+							add_event(new silence_event(time,syn->get_post_neuron()));
+						else
+						{
+							Current_t current = syn->eval_pre_event(time);
+							LOGGER("Current: " << current);
+							add_event(new psp_event(time,syn->get_post_neuron(),current));
+						}
+					}
 				}
-			}
-			else
-				LOGGER("@" << time << " Processing pre_syn_event for neuron. Empty, not doing anything.");
+				else
+					LOGGER("@" << time << " Processing pre_syn_event for neuron. Empty, not doing anything.");
+		}
 		}
 		else if (type == EventType::PSP)
 		{
@@ -63,10 +68,21 @@ namespace xnet {
 			{
 				LOGGER("Neuron " << linked_object << " fired");
 				add_event(new pre_syn_event(time,linked_object));
+				add_event(new post_syn_event(time,linked_object));
 			}
 		}
-		//	case EventType::PST:
-		//	break;
+		else if (type == EventType::PST)
+		{
+			for (Id_t syn_id : get_pre_synapse_ranges(linked_object))
+			{
+				LOGGER("@" << time << " Processing post_syn_event for neuron " << linked_object << " and synapse "<< syn_id);
+				Synapse* syn = get_synapse_pointer(syn_id);
+				if (syn->hard_inhibit())
+				{} // pass
+				else
+					syn->stdp(time);
+			}
+		}
 		else if (type == EventType::SIL)
 		{
 			LOGGER("@" << time << " Processing silence event for post-synaptic neuron " << linked_object);
@@ -86,6 +102,7 @@ namespace xnet {
 	{
 		neurons.push_back(Neuron(p));
 		pre_syn_lookup.push_back({});
+		post_syn_lookup.push_back({});
 	}
 
 	Population Simulation::create_population_fixed(std::size_t s, Neuron_params const& params)
@@ -169,13 +186,15 @@ namespace xnet {
 		{
 			auto p1_index = p1.get(i);
 			// store synapse range in pre_syn_lookup
-			pre_syn_lookup[p1_index].set_start(synapses.size());
+			SynapseRange range(synapses.size());
+			pre_syn_lookup[p1_index].push_back(range);
 			// iterate over target neurons
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
-				synapses.push_back(Synapse(p1_index,p2.get(j),w));
+				Id_t post = p2.get(j);
+				add_synapse(p1_index,post,w);
 			}
-			pre_syn_lookup[p1_index].set_end(synapses.size()-1);
+			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
 	}
 
@@ -186,14 +205,15 @@ namespace xnet {
 		{
 			auto p1_index = p.get(i);
 			// store synapse range in pre_syn_lookup
-			pre_syn_lookup[p1_index].set_start(synapses.size());
+			SynapseRange range(synapses.size());
+			pre_syn_lookup[p1_index].push_back(range);
 			// iterate over target neurons
 			for (unsigned int j=0; j<p.size(); ++j)
 			{
 				if (i!=j)
 					synapses.push_back(Synapse(p1_index,p.get(j),{},true));
 			}
-			pre_syn_lookup[p1_index].set_end(synapses.size()-1);
+			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
 	}
 
@@ -219,14 +239,24 @@ namespace xnet {
 		{
 			auto p1_index = p1.get(i);
 			// store synapse range in pre_syn_lookup
-			pre_syn_lookup[p1_index].set_start(synapses.size());
+			SynapseRange range(synapses.size());
+			pre_syn_lookup[p1_index].push_back(range);
 			// iterate over target neurons
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
-				synapses.push_back(Synapse(p1_index,p2.get(j),{winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)}));
+				Id_t post = p2.get(j);
+				add_synapse(p1_index, post, {winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)});
 			}
-			pre_syn_lookup[p1_index].set_end(synapses.size()-1);
+			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
+	}
+
+	inline
+	void Simulation::add_synapse(Id_t pre, Id_t post, Weight w)
+	{
+		synapses.push_back(Synapse(pre,post,w));
+		post_syn_lookup[post].push_back(synapses.size()-1);
+		//LOGGER("Adding pre_synaptic synapse # " << synapses.size()-1 << " for neuron " << post);
 	}
 
 	void Simulation::add_event(event * e)
@@ -242,7 +272,12 @@ namespace xnet {
 		}
 	}
 
-	SynapseRange Simulation::get_synapse_range(Id_t const& neuron) const
+	std::vector<Id_t> Simulation::get_pre_synapse_ranges(Id_t const& neuron) const
+	{
+		return post_syn_lookup[neuron];
+	}
+
+	std::vector<SynapseRange> Simulation::get_synapse_ranges(Id_t const& neuron) const
 	{
 		return pre_syn_lookup[neuron];
 	}

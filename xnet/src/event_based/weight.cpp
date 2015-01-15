@@ -19,9 +19,24 @@ namespace xnet
 		am(ami)
 	{
 	};
+
 	Current_t Weight::calc_current() const
 	{
 		//return weight/wmax*gmax;
 		return w;
+	}
+
+	void Weight::update_pos()
+	{
+		w += ap;
+		if (w > wmax)
+			w = wmax;
+	}
+
+	void Weight::update_neg()
+	{
+		w -= am;
+		if (w < wmin)
+			w = wmin;
 	}
 }

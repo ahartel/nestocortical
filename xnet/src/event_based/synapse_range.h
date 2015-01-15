@@ -7,6 +7,7 @@ namespace xnet
 	{
 	public:
 		SynapseRange();
+		SynapseRange(size_t s);
 	private:
 	};
 }

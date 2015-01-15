@@ -38,7 +38,8 @@ namespace xnet {
 		void add_event(event * e);
 		void run_until_empty();
 		void run_one_event();
-		SynapseRange get_synapse_range(Id_t const& neuron) const;
+		std::vector<SynapseRange> get_synapse_ranges(Id_t const& neuron) const;
+		std::vector<Id_t> get_pre_synapse_ranges(Id_t const& neuron) const;
 		Synapse* get_synapse_pointer(Id_t const& synapse);
 		Neuron* get_neuron_pointer(Id_t const& nrn);
 		Time_t get_time() const;
@@ -47,11 +48,13 @@ namespace xnet {
 		void print_spikes(std::string filename);
 	protected:
 		void processEvent(event* ev);
+		void add_synapse(Id_t, Id_t, Weight);
 
 		std::default_random_engine generator;
 		std::vector<Neuron> neurons;
 		std::vector<Synapse> synapses;
-		std::vector<SynapseRange> pre_syn_lookup;
+		std::vector<std::vector<SynapseRange>> pre_syn_lookup;
+		std::vector<std::vector<Id_t>> post_syn_lookup;
 		Time_t time;
 		std::priority_queue<event*, std::vector<event*, std::allocator<event*> >,
 			eventComparator> eventQueue;

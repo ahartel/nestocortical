@@ -8,23 +8,33 @@ namespace xnet
 		pre_neuron(pre),
 		post_neuron(post),
 		_weight(w),
-		hard(hard_inhibit)
+		hard(hard_inhibit),
+		last_pre_time(-1),
+		T_ltp(0.0015)
 	{
 	}
 
-	//template <class WT>
-	/*
-	psp_event* Synapse::generate_psp_event()
+	Current_t Synapse::eval_pre_event(Time_t t)
 	{
-		return new psp_event(theSimulation.get_time(),post_neuron,_weight.calc_current());
+		last_pre_time = t;
+		return get_current();
 	}
-	*/
+
+	void Synapse::stdp(Time_t t)
+	{
+		// update
+		if (last_pre_time >= 0 && t-last_pre_time <= T_ltp)
+			_weight.update_pos();
+		else
+			_weight.update_neg();
+	}
 
 	Id_t Synapse::get_post_neuron() const
 	{
 		return post_neuron;
 	}
 
+	inline
 	Current_t Synapse::get_current() const
 	{
 		return _weight.calc_current();

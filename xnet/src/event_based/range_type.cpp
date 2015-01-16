@@ -19,7 +19,7 @@ namespace xnet
 
 	void RangeType::update_size()
 	{
-		_size = _end-_start;
+		_size = _end-_start+1;
 	}
 
 	void RangeType::set_start(std::size_t s)
@@ -30,7 +30,7 @@ namespace xnet
 
 	void RangeType::set_end(std::size_t e)
 	{
-		_end = e+1;
+		_end = e;
 		update_size();
 	}
 
@@ -46,7 +46,7 @@ namespace xnet
 
 		if (_size < 0)
 			throw std::out_of_range("Start or End in RangeType not fully defined.");
-		if (_start + pos >= _end)
+		if (_start + pos > _end)
 			throw std::out_of_range("RangeType range exceeded");
 
 		return _start + pos;

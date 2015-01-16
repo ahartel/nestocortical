@@ -13,6 +13,7 @@ namespace xnet {
 		Current_t eval_pre_event(Time_t t);
 		bool hard_inhibit() const;
 		void stdp(Time_t);
+		Weight get_weight() const;
 	private:
 		Current_t get_current() const;
 

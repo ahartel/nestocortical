@@ -1,5 +1,6 @@
 #include <fstream>
 #include <tuple>
+#include <sstream>
 #include "event_based/logger.h"
 #include "event_based/simulation_queue.h"
 
@@ -40,7 +41,7 @@ namespace xnet {
 				if (synrange.non_empty())
 				{
 					LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
-					for (std::size_t i=synrange.begin(); i<synrange.end(); ++i)
+					for (std::size_t i=synrange.begin(); i<=synrange.end(); ++i)
 					{
 						Synapse* syn = get_synapse_pointer(i);
 						if (syn->hard_inhibit())
@@ -287,6 +288,12 @@ namespace xnet {
 		return &(synapses[synapse]);
 	}
 
+	Synapse const* Simulation::get_synapse_pointer(Id_t const& synapse) const
+	{
+		return &(synapses[synapse]);
+	}
+
+
 	Neuron* Simulation::get_neuron_pointer(Id_t const& nrn)
 	{
 		return &(neurons[nrn]);
@@ -315,5 +322,34 @@ namespace xnet {
 			file << std::get<1>(pair) << "," << std::get<0>(pair) << "\n";
 		}
 		file.close();
+	}
+
+	void Simulation::print_pre_weights(Id_t nrn, std::string filename) const
+	{
+		std::ofstream file(filename,std::ios::out);
+		for (Id_t syn_id : get_pre_synapse_ranges(nrn))
+		{
+			Synapse const* syn = get_synapse_pointer(syn_id);
+			file << syn->get_weight().calc_current() << "\n";
+		}
+		file.close();
+
+	}
+
+	void Simulation::print_pre_weights(Population const& pop, std::string filename) const
+	{
+		for (unsigned int i=0; i<pop.size(); ++i)
+		{
+			Id_t nrn = pop.get(i);
+			std::stringstream stst("");
+			stst << filename << nrn;
+			std::ofstream file(stst.str(),std::ios::out);
+			for (Id_t syn_id : get_pre_synapse_ranges(nrn))
+			{
+				Synapse const* syn = get_synapse_pointer(syn_id);
+				file << syn->get_weight().calc_current() << "\n";
+			}
+			file.close();
+		}
 	}
 }

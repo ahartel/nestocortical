@@ -20,7 +20,7 @@ namespace xnet
 		if (t > (last_spike_time + params.tau_ref) && t > (last_inhibit_time + params.Tinhibit))
 		{
 			u = u * std::exp(-1.0*(t-last_update_time)/params.tau_mem) + c;
-			LOGGER("c=" << c << ", u=" << u);
+			//LOGGER("c=" << c << ", u=" << u);
 
 			if (u >= params.V_th)
 			{

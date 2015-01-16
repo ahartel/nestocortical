@@ -41,11 +41,14 @@ namespace xnet {
 		std::vector<SynapseRange> get_synapse_ranges(Id_t const& neuron) const;
 		std::vector<Id_t> get_pre_synapse_ranges(Id_t const& neuron) const;
 		Synapse* get_synapse_pointer(Id_t const& synapse);
+		Synapse const* get_synapse_pointer(Id_t const& synapse) const;
 		Neuron* get_neuron_pointer(Id_t const& nrn);
 		Time_t get_time() const;
 		void add_spike(Time_t t, Id_t nrn);
 		std::vector<Spike_t>& get_spikes();
 		void print_spikes(std::string filename);
+		void print_pre_weights(Population const& pop, std::string filename) const;
+		void print_pre_weights(Id_t nrn, std::string filename) const;
 	protected:
 		void processEvent(event* ev);
 		void add_synapse(Id_t, Id_t, Weight);

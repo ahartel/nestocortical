@@ -20,6 +20,7 @@ int main(int argc, char* argv[])
 	int num_dvs_addresses = 2 * image_width * image_height;
 	float dt = 1.0e-3;
 	int	num_repetitions = atoi(argv[1]);
+	std::string filename_base(argv[2]);
 	float velocity = 480.0;
 	float ball_radius = 6.0;
 
@@ -43,13 +44,13 @@ int main(int argc, char* argv[])
 											{1.0,0.2}, //wmin
 											{1000.0,200.0}, //wmax
 											{800.0,160.0}, // winit
-											{50.0,10.0}, // ap
-											{100.0,20.0} // am
+											{100.0,20.0}, // ap
+											{50.0,10.0} // am
 										);
 
 	theSimulation.connect_all_to_all_wta(pop2);
 
-	//dump_weights(synapses, "./results/xnet_balls_weights_initial.txt", num_neurons, num_dvs_addresses);
+	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_initial_");
 
 	// time is in seconds
 	Time_t time = 0;
@@ -81,12 +82,12 @@ int main(int argc, char* argv[])
 	}
 
 	LOGGER(theSimulation.get_spikes().size());
-	//theSimulation.run(10);
+	//theSimulation.run(10000);
 	theSimulation.run_until_empty();
 
-	theSimulation.print_spikes("./results/xnet_balls_spikes.dat");
+	theSimulation.print_spikes(filename_base+"/xnet_balls_spikes.dat");
 
-	//dump_weights(synapses, "./results/xnet_balls_weights_final.txt", num_neurons, num_dvs_addresses);
+	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_final_");
 
 }
 //# vim: set noexpandtab

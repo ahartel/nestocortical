@@ -1,3 +1,4 @@
+#include "logger.h"
 #include "event_based/synapse.h"
 
 namespace xnet
@@ -24,9 +25,15 @@ namespace xnet
 	{
 		// update
 		if (last_pre_time >= 0 && t-last_pre_time <= T_ltp)
+		{
 			_weight.update_pos();
+			LOGGER("Facilitating");
+		}
 		else
+		{
 			_weight.update_neg();
+			LOGGER("Depressing");
+		}
 	}
 
 	Id_t Synapse::get_post_neuron() const
@@ -43,5 +50,10 @@ namespace xnet
 	bool Synapse::hard_inhibit() const
 	{
 		return hard;
+	}
+
+	Weight Synapse::get_weight() const
+	{
+		return _weight;
 	}
 }

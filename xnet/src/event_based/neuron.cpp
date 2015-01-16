@@ -17,10 +17,20 @@ namespace xnet
 	{
 		bool fired = false;
 
-		if (t > (last_spike_time + params.tau_ref) && t > (last_inhibit_time + params.Tinhibit))
+		if (t <= (last_spike_time + params.tau_ref))
+		{
+			LOGGER("Neuron still refractory");
+			return fired;
+		}
+		else if (t <= (last_inhibit_time + params.Tinhibit))
+		{
+			LOGGER("Neuron still inhibited");
+			return fired;
+		}
+		else
 		{
 			u = u * std::exp(-1.0*(t-last_update_time)/params.tau_mem) + c;
-			//LOGGER("c=" << c << ", u=" << u);
+			LOGGER("c=" << c << ", u=" << u);
 
 			if (u >= params.V_th)
 			{
@@ -32,9 +42,9 @@ namespace xnet
 			}
 
 			last_update_time = t;
-		}
 
-		return fired;
+			return fired;
+		}
 	}
 
 	void Neuron::silence_neuron(Time_t t)

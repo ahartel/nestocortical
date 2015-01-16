@@ -4,7 +4,7 @@
 #include <tuple>
 #include <iostream>
 #include <random>
-
+#include <fstream>
 #include "logger.h"
 #include "simulation_queue.h"
 #include "DVS.h"
@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
 	xnet::Simulation theSimulation;
 
 	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,0.005,0.010,0.0015});
-	auto pop2 = theSimulation.create_population_fixed(num_neurons,{40000.0,0.005,0.010,0.0015});
+	auto pop2 = theSimulation.create_population_fixed(num_neurons,{10000.0,0.005,0.010,0.0015});
 
 	std::default_random_engine generator;
 
@@ -58,11 +58,14 @@ int main(int argc, char* argv[])
 	int angles[8] = {0,45,90,135,180,225,270,315};
 	std::uniform_int_distribution<int> angle_dist(0,7);
 
+	std::ofstream file(filename_base+"/xnet_balls_order",std::ios::out);
+	file.close();
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
 		int angle = angles[rep%8];//angle_dist(generator)];
-		cout << "-------- repetition = " << rep << ", time = " << time <<
-			", angle = " << angle << " ----------" << endl;
+		file.open(filename_base+"/xnet_balls_order",std::ios::app);
+		file << rep << "," << time << "," << angle << endl;
+		file.close();
 
 		cam.reset_and_angle(angle,time);
 

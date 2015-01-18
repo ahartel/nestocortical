@@ -3,7 +3,6 @@ import os, sys
 import numpy as np
 from sets import Set
 import matplotlib.pyplot as plt
-import pprint
 from psth import psth
 
 image_width = 16
@@ -21,7 +20,7 @@ color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
 if not os.path.exists('results'):
     os.makedirs('results')
 
-#os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 
 if 0:
     for neuron in neurons:
@@ -56,6 +55,7 @@ data = np.loadtxt('./results/xnet_balls_spikes.dat', delimiter=',')
 # generate Peri-Stimulus Time Histogram
 psth = psth(stimuli, data, 10)
 
+#import pprint
 #pp = pprint.PrettyPrinter()
 #pp.pprint(psth[0.0])
 

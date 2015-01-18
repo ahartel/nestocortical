@@ -1,2 +1,3 @@
-* Finish PSTH
+* Show that neurons that react are unique to the patterns by showing one plot
+ which colors the neurons according to stimulus
 * Add Templating of Neuron and Synapse types

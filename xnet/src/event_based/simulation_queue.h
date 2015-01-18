@@ -46,7 +46,7 @@ namespace xnet {
 		Time_t get_time() const;
 		void add_spike(Time_t t, Id_t nrn);
 		std::vector<Spike_t>& get_spikes();
-		void print_spikes(std::string filename);
+		void print_spikes(std::string filename, Realtime_t scale=1.0);
 		void print_pre_weights(Population const& pop, std::string filename) const;
 		void print_pre_weights(Id_t nrn, std::string filename) const;
 	protected:

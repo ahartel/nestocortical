@@ -21,9 +21,9 @@ class BallCamera
 public:
 	BallCamera(float angle, float velocity, float radius, int image_width, int image_height);
 
-	vector<vector<bool>> generate_image(Time_t t);
+	vector<vector<bool>> generate_image(Realtime_t t);
 
-	tuple<double,double> get_ball_center(Time_t t) const;
+	tuple<double,double> get_ball_center(Realtime_t t) const;
 
 	float distance(float x, float y, tuple<double,double> center);
 

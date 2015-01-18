@@ -11,7 +11,7 @@ namespace xnet
 		_weight(w),
 		hard(hard_inhibit),
 		last_pre_time(-1),
-		T_ltp(0.0015)
+		T_ltp(15)
 	{
 	}
 

@@ -12,7 +12,7 @@
 		calculate_ball_start();
 	}
 
-	vector<vector<bool>> BallCamera::generate_image(Time_t t)
+	vector<vector<bool>> BallCamera::generate_image(Realtime_t t)
 	{
 		auto ball_center = get_ball_center(t);
 		LOGGER(get<0>(ball_center) << "," << get<1>(ball_center));
@@ -33,7 +33,7 @@
 	}
 
 	inline
-	tuple<double,double> BallCamera::get_ball_center(Time_t t) const
+	tuple<double,double> BallCamera::get_ball_center(Realtime_t t) const
 	{
 		return make_tuple(
 			cos(angle)*velocity*(t-start_time) + get<0>(ball_start),

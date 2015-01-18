@@ -7,9 +7,11 @@ namespace xnet
 	Neuron::Neuron(Neuron_params const& p) :
 		u(0),
 		params(p),
-		last_spike_time(-2*params.tau_ref),
+		last_spike_time(0),
 		last_update_time(0),
-		last_inhibit_time(-2*params.Tinhibit)
+		last_inhibit_time(0),
+		inhibited(false),
+		refractory(false)
 	{
 	}
 
@@ -17,39 +19,34 @@ namespace xnet
 	{
 		bool fired = false;
 
-		if (t <= (last_spike_time + params.tau_ref))
+		if ((!refractory || t > (last_spike_time + params.Tref))
+			&& (!inhibited || t > (last_inhibit_time + params.Tinhibit)))
 		{
-			LOGGER("Neuron still refractory");
-			return fired;
-		}
-		else if (t <= (last_inhibit_time + params.Tinhibit))
-		{
-			LOGGER("Neuron still inhibited");
-			return fired;
-		}
-		else
-		{
-			u = u * std::exp(-1.0*(t-last_update_time)/params.tau_mem) + c;
+			refractory = false;
+			inhibited = false;
+			u = u * std::exp(-1.0*float(t-last_update_time)/params.tau_mem) + c;
 			LOGGER("c=" << c << ", u=" << u);
 
 			if (u >= params.V_th)
 			{
 				// emit spike
 				fired = true;
+				refractory = true;
 				// reset u
 				u = 0;
 				last_spike_time = t;
 			}
 
 			last_update_time = t;
-
-			return fired;
 		}
+
+		return fired;
 	}
 
 	void Neuron::silence_neuron(Time_t t)
 	{
 		u = 0;
 		last_inhibit_time = t;
+		refractory = true;
 	}
 }

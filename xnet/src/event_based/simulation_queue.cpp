@@ -133,8 +133,8 @@ namespace xnet {
 		*/
 		std::uniform_real_distribution<Membrane_t> V_th(th.low(),th.high());
 		std::uniform_real_distribution<Timeconst_t> tau_mem(tm.low(),tm.high());
-		std::uniform_real_distribution<Timeconst_t> tau_ref(tr.low(),tr.high());
-		std::uniform_real_distribution<Timeconst_t> Tinhibit(ti.low(),ti.high());
+		std::uniform_int_distribution<Time_t> tau_ref(tr.low(),tr.high());
+		std::uniform_int_distribution<Time_t> Tinhibit(ti.low(),ti.high());
 
 		Population pop = create_population_start();
 		for (unsigned int i=0;i<s;++i)
@@ -160,10 +160,12 @@ namespace xnet {
 		*/
 		std::normal_distribution<Membrane_t> V_th(th.mean(),th.std());
 		std::normal_distribution<Timeconst_t> tau_mem(tm.mean(),tm.std());
-		std::normal_distribution<Timeconst_t> tau_ref(tr.mean(),tr.std());
-		std::normal_distribution<Timeconst_t> Tinhibit(ti.mean(),ti.std());
+		std::normal_distribution<Realtime_t> tau_ref(tr.mean(),tr.std());
+		std::normal_distribution<Realtime_t> Tinhibit(ti.mean(),ti.std());
 
 		Population pop = create_population_start();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnarrowing"
 		for (unsigned int i=0;i<s;++i)
 		{
 			create_population_add_neuron({
@@ -173,6 +175,7 @@ namespace xnet {
 									Tinhibit(generator)
 								});
 		}
+#pragma GCC diagnostic pop
 		pop.set_end(neurons.size()-1);
 		return pop;
 	}
@@ -314,12 +317,12 @@ namespace xnet {
 		spike_list.push_back(std::make_tuple(t,nrn));
 	}
 
-	void Simulation::print_spikes(std::string filename)
+	void Simulation::print_spikes(std::string filename, Realtime_t scale)
 	{
 		std::ofstream file(filename,std::ios::out);
 		for (auto pair : spike_list)
 		{
-			file << std::get<1>(pair) << "," << std::get<0>(pair) << "\n";
+			file << std::get<1>(pair) << "," << float(std::get<0>(pair))*scale << "\n";
 		}
 		file.close();
 	}

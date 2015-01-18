@@ -12,13 +12,18 @@
 
 using namespace std;
 
+/*
+   for this experiment a time unit is 10^-4 seconds
+*/
+
 int main(int argc, char* argv[])
 {
 	int image_width = 16;
 	int image_height = 16;
 	int num_neurons = 48;
 	int num_dvs_addresses = 2 * image_width * image_height;
-	float dt = 1.0e-3;
+	Time_t dt = 10;
+	float timebase = 1.0e-4;
 	int	num_repetitions = atoi(argv[1]);
 	std::string filename_base(argv[2]);
 	float velocity = 480.0;
@@ -35,8 +40,8 @@ int main(int argc, char* argv[])
 
 	xnet::Simulation theSimulation;
 
-	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,0.005,0.010,0.0015});
-	auto pop2 = theSimulation.create_population_fixed(num_neurons,{10000.0,0.005,0.010,0.0015});
+	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,50.0,100,15});
+	auto pop2 = theSimulation.create_population_fixed(num_neurons,{10000.0,50.0,100,15});
 
 	std::default_random_engine generator;
 
@@ -52,7 +57,6 @@ int main(int argc, char* argv[])
 
 	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_initial_");
 
-	// time is in seconds
 	Time_t time = 0;
 
 	int angles[8] = {0,45,90,135,180,225,270,315};
@@ -64,14 +68,14 @@ int main(int argc, char* argv[])
 	{
 		int angle = angles[angle_dist(generator)];
 		file.open(filename_base+"/xnet_balls_order",std::ios::app);
-		file << angle << "," << time << "\n";
+		file << angle << "," << float(time)*timebase << "\n";
 		file.close();
 
-		cam.reset_and_angle(angle,time);
+		cam.reset_and_angle(angle,float(time)*timebase);
 
-		for (float t=0.0; t<0.100; t+=dt)
+		for (Time_t t=0; t<1000; t+=dt)
 		{
-			auto image = cam.generate_image(time);
+			auto image = cam.generate_image(float(time)*timebase);
 
 			auto spikes = dvs.calculate_spikes(image);
 			for (auto spike : spikes)
@@ -81,14 +85,14 @@ int main(int argc, char* argv[])
 			time += dt;
 		}
 		// add a time-step of 100 ms between each run
-		time += 0.100;
+		time += 1000;
 	}
 
 	LOGGER(theSimulation.get_spikes().size());
 	//theSimulation.run(10000);
 	theSimulation.run_until_empty();
 
-	theSimulation.print_spikes(filename_base+"/xnet_balls_spikes.dat");
+	theSimulation.print_spikes(filename_base+"/xnet_balls_spikes.dat",timebase);
 
 	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_final_");
 

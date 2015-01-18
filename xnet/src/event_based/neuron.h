@@ -13,5 +13,6 @@ namespace xnet {
 		Membrane_t u;
 		Neuron_params params;
 		Time_t last_spike_time, last_update_time, last_inhibit_time;
+		bool refractory, inhibited;
 	};
 }

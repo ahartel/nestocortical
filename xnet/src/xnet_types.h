@@ -1,7 +1,8 @@
 #pragma once
 #include <tuple>
 
-typedef float Time_t;
+typedef unsigned int Time_t;
+typedef float Realtime_t;
 typedef float Timeconst_t;
 typedef unsigned int Id_t;
 typedef unsigned char Weight_t;

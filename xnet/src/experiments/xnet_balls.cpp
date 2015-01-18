@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 	file.close();
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
-		int angle = angles[rep%8];//angle_dist(generator)];
+		int angle = angles[angle_dist(generator)];
 		file.open(filename_base+"/xnet_balls_order",std::ios::app);
 		file << angle << "," << time << "\n";
 		file.close();

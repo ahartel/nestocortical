@@ -7,7 +7,7 @@ from psth import psth
 
 image_width = 16
 image_height = 16
-num_repetitions = 240
+num_repetitions = 2000
 neurons = range(512,560)
 
 color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
@@ -20,7 +20,7 @@ color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
 if not os.path.exists('results'):
     os.makedirs('results')
 
-os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+#os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 
 if 0:
     for neuron in neurons:
@@ -59,7 +59,7 @@ psth = psth(stimuli, data, 10)
 #pp = pprint.PrettyPrinter()
 #pp.pprint(psth[0.0])
 
-fig, axes = plt.subplots(nrows=len(psth), ncols=len(psth.itervalues().next()))
+fig, axes = plt.subplots(nrows=len(psth), ncols=3)
 
 for ax, col in zip(axes[0], range(len(psth.itervalues().next()))):
     ax.set_title(col)
@@ -70,7 +70,7 @@ for ax, row in zip(axes[:,0], psth):
 x = 0
 y = 0
 for stimulus,groups in psth.iteritems():
-    for group in groups:
+    for group in [groups[0],groups[5],groups[-1]]:
         ax = axes[y][x]
         for nrn, times in group.iteritems():
             mean = np.mean(times)

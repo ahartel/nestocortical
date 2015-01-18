@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	int num_output_neurons = 2;
 	int num_intermediate_neurons = 4;
 	int num_dvs_addresses = 2 * court_height;
-	float dt = 1.0e-3;
+	Time_t dt = 10;
 	int	num_repetitions = atoi(argv[1]);
 	std::string filename_base(argv[2]);
 	float velocity = 10.0;
@@ -28,8 +28,8 @@ int main(int argc, char* argv[])
 
 	xnet::Simulation theSimulation;
 
-	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,0.005,0.010,0.0015});
-	auto pop2 = theSimulation.create_population_fixed(num_output_neurons,{10000.0,0.005,0.010,0.0015});
+	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,50.,100,15});
+	auto pop2 = theSimulation.create_population_fixed(num_output_neurons,{10000.0,50.0,100,15});
 
 	std::default_random_engine generator;
 
@@ -51,30 +51,27 @@ int main(int argc, char* argv[])
 	int angles[8] = {0,45,90,135,180,225,270,315};
 	std::uniform_int_distribution<int> angle_dist(0,7);
 
-	std::ofstream file(filename_base+"/xnet_balls_order",std::ios::out);
-	file.close();
+	//std::ofstream file(filename_base+"/xnet_balls_order",std::ios::out);
+	//file.close();
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
-		int angle = angles[angle_dist(generator)];
-		file.open(filename_base+"/xnet_balls_order",std::ios::app);
-		file << angle << "," << time << "\n";
-		file.close();
+		//int angle = angles[angle_dist(generator)];
+		//file.open(filename_base+"/xnet_balls_order",std::ios::app);
+		//file << angle << "," << time << "\n";
+		//file.close();
 
-		cam.reset_and_angle(angle,time);
-
-		for (float t=0.0; t<0.100; t+=dt)
+		for (Time_t t=0; t<1000; t+=dt)
 		{
-			auto image = cam.generate_image(time);
+			auto spikes = pdvs.advance(0.001,{});
 
-			auto spikes = dvs.calculate_spikes(image);
 			for (auto spike : spikes)
 			{
-				theSimulation.add_event(new xnet::pre_syn_event(time,spike));
+				theSimulation.add_event(spike);
 			}
 			time += dt;
 		}
 		// add a time-step of 100 ms between each run
-		time += 0.100;
+		time += 1000;
 	}
 
 	LOGGER(theSimulation.get_spikes().size());

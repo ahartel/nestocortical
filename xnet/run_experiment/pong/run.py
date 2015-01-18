@@ -20,7 +20,7 @@ color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
 if not os.path.exists('results'):
     os.makedirs('results')
 
-os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+#os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 
 if 0:
     for neuron in neurons:

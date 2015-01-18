@@ -20,6 +20,7 @@ def build(bld):
         source = [
             'src/input/BallCamera.cpp',
             'src/input/DVS.cpp',
+            'src/input/pongdvs.cpp',
         ],
         use = 'XNET',
         target = 'xnet_input',

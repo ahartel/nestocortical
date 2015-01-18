@@ -1,59 +1,27 @@
 #!/bin/python
-import os
+import os, sys
 import numpy as np
 from sets import Set
 import matplotlib.pyplot as plt
+import pprint
+from psth import psth
 
 image_width = 16
 image_height = 16
-num_repetitions = 120
+num_repetitions = 240
+neurons = range(512,560)
+
+color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
+    '#666666','#777777','#888888','#999999','#aaaaaa',
+    '#bbbbbb','#cccccc','#dddddd','#eeeeee','#ffffff']
+
+#print plt.style.available
+#plt.style.context('fivethirtyeight')
 
 if not os.path.exists('results'):
     os.makedirs('results')
 
 #os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
-
-neurons = range(512,560)
-# load order
-order = np.loadtxt('./results/xnet_balls_order',delimiter=',')
-order_count = 0
-psth_groups = {}
-angle_times = {}
-angles = [0,45,90,135,180,225,270,315]
-for angle in angles:
-    psth_groups[angle] = []
-    angle_times[angle] = []
-
-# plot weight differences for neurons that have fired
-# collect all neurons with index > 511 that have fired
-if 1:
-    data = np.loadtxt('./results/xnet_balls_spikes.dat', delimiter=',')
-    plt.plot(data[:,1], data[:,0],'o')
-    angle = order[order_count][2]
-    angle_times[angle].append(order[order_count][1])
-    for line in data:
-        neuron = line[0]
-        if neuron > 511:
-            while order_count < len(order)-1 and line[1] > order[order_count+1][1]:
-                order_count += 1
-                angle = order[order_count][2]
-                angle_times[angle].append(order[order_count][1])
-            psth_groups[angle].append((line[0],line[1]))
-
-    print psth_groups
-    print angle_times
-
-    group_by = 10
-    for angle in angles:
-        print "Angle ", angle
-        group_count = 0
-        for spike in psth_groups[angle]:
-            print spike
-            while spike[1] > angle_times[angle][group_count+1]:
-                group_count += 1
-            print "Presentation: ",group_count
-            new_time = spike[1]-angle_times[angle][group_count]
-            print new_time
 
 if 0:
     for neuron in neurons:
@@ -81,4 +49,41 @@ if 0:
         plt.title(neuron)
         plt.imshow(weight_diff)
 
+# load order
+stimuli = np.loadtxt('./results/xnet_balls_order',delimiter=',')
+# load spikes
+data = np.loadtxt('./results/xnet_balls_spikes.dat', delimiter=',')
+# generate Peri-Stimulus Time Histogram
+psth = psth(stimuli, data, 10)
+
+#pp = pprint.PrettyPrinter()
+#pp.pprint(psth[0.0])
+
+fig, axes = plt.subplots(nrows=len(psth), ncols=len(psth.itervalues().next()))
+
+for ax, col in zip(axes[0], range(len(psth.itervalues().next()))):
+    ax.set_title(col)
+
+for ax, row in zip(axes[:,0], psth):
+    ax.set_ylabel(row)
+
+x = 0
+y = 0
+for stimulus,groups in psth.iteritems():
+    for group in groups:
+        ax = axes[y][x]
+        for nrn, times in group.iteritems():
+            mean = np.mean(times)
+            std = np.std(times)
+            num = len(times)
+            ax.errorbar(mean,nrn,xerr=std,marker='o',color=color_lookup[num],ecolor=color_lookup[num])
+
+        x += 1
+    y += 1
+    x = 0
+
+
+# show figures
 plt.show()
+
+

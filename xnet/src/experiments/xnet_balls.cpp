@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 	{
 		int angle = angles[rep%8];//angle_dist(generator)];
 		file.open(filename_base+"/xnet_balls_order",std::ios::app);
-		file << rep << "," << time << "," << angle << endl;
+		file << angle << "," << time << "\n";
 		file.close();
 
 		cam.reset_and_angle(angle,time);

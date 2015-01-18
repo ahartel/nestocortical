@@ -9,7 +9,7 @@ def configure(conf):
     conf.env.CXXFLAGS_XNET = ['-std=c++11']
     if not conf.options.nolog:
         conf.env.CXXFLAGS_XNET.append('-DCOUT_ENABLED')
-    conf.env.INCLUDES_XNET = ['./src', './src/event_based/']
+    conf.env.INCLUDES_XNET = ['./src', './src/event_based/', './src/input/']
 
     conf.recurse('src/test')
 
@@ -18,8 +18,8 @@ def build(bld):
 
     bld.shlib (
         source = [
-            'src/BallCamera.cpp',
-            'src/DVS.cpp',
+            'src/input/BallCamera.cpp',
+            'src/input/DVS.cpp',
         ],
         use = 'XNET',
         target = 'xnet_input',
@@ -73,5 +73,12 @@ def build(bld):
         source = ['src/experiments/xnet_balls.cpp'],
         use = ['xnet','xnetevent'],
         target = 'xnet_balls',
+        install_path = 'bin',
+    )
+
+    bld.program (
+        source = ['src/experiments/xnet_pong.cpp'],
+        use = ['xnet','xnetevent'],
+        target = 'xnet_pong',
         install_path = 'bin',
     )

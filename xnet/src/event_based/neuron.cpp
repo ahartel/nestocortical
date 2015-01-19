@@ -39,6 +39,8 @@ namespace xnet
 
 			last_update_time = t;
 		}
+		else
+			LOGGER("refr. " << refractory << ", inhibit " << inhibited);
 
 		return fired;
 	}
@@ -47,6 +49,6 @@ namespace xnet
 	{
 		u = 0;
 		last_inhibit_time = t;
-		refractory = true;
+		inhibited = true;
 	}
 }

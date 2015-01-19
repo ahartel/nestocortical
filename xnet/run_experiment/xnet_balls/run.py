@@ -76,7 +76,7 @@ for stimulus,groups in psth.iteritems():
             mean = np.mean(times)
             std = np.std(times)
             num = len(times)
-            ax.errorbar(mean,nrn,xerr=std,marker='o',color=color_lookup[num],ecolor=color_lookup[num])
+            ax.errorbar(mean,nrn,xerr=std,marker='o',color='black')#color_lookup[num],ecolor=color_lookup[num])
 
         x += 1
     y += 1

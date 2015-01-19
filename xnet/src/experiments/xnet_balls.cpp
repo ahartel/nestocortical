@@ -50,7 +50,8 @@ int main(int argc, char* argv[])
 											{1000.0,200.0}, //wmax
 											{800.0,160.0}, // winit
 											{100.0,20.0}, // ap
-											{50.0,10.0} // am
+											{50.0,10.0}, // am
+											{15.0,0.0} // ltp
 										);
 
 	theSimulation.connect_all_to_all_wta(pop2);

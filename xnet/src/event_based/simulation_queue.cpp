@@ -183,7 +183,8 @@ namespace xnet {
 	void Simulation::connect_all_to_all_identical(
 		Population const& p1,
 		Population const& p2,
-		Weight const& w)
+		Weight const& w,
+		Timeconst_t ltp)
 	{
 		// iterate over source neurons
 		for (unsigned int i=0; i<p1.size(); ++i)
@@ -196,7 +197,7 @@ namespace xnet {
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
 				Id_t post = p2.get(j);
-				add_synapse(p1_index,post,w);
+				add_synapse(p1_index,post,w,ltp);
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
@@ -228,7 +229,8 @@ namespace xnet {
 		NormalRange_t wmax,
 		NormalRange_t winit,
 		NormalRange_t ap,
-		NormalRange_t am
+		NormalRange_t am,
+		NormalRange_t ltp
 	)
 	{
 		// distributions to sample from
@@ -237,6 +239,7 @@ namespace xnet {
 		std::normal_distribution<Current_t> winit_dist(winit.mean(),winit.std());
 		std::normal_distribution<Current_t> ap_dist(ap.mean(),ap.std());
 		std::normal_distribution<Current_t> am_dist(am.mean(),am.std());
+		std::normal_distribution<Timeconst_t> ltp_dist(ltp.mean(), ltp.std());
 
 		// iterate over source neurons
 		for (unsigned int i=0; i<p1.size(); ++i)
@@ -249,16 +252,16 @@ namespace xnet {
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
 				Id_t post = p2.get(j);
-				add_synapse(p1_index, post, {winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)});
+				add_synapse(p1_index, post, {winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)}, ltp_dist(generator));
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
 	}
 
 	inline
-	void Simulation::add_synapse(Id_t pre, Id_t post, Weight w)
+	void Simulation::add_synapse(Id_t pre, Id_t post, Weight w, Timeconst_t ltp)
 	{
-		synapses.push_back(Synapse(pre,post,w));
+		synapses.push_back(Synapse(pre,post,w,ltp));
 		post_syn_lookup[post].push_back(synapses.size()-1);
 		//LOGGER("Adding pre_synaptic synapse # " << synapses.size()-1 << " for neuron " << post);
 	}
@@ -354,5 +357,17 @@ namespace xnet {
 			}
 			file.close();
 		}
+	}
+
+	std::vector<Spike_t> Simulation::get_new_spikes()
+	{
+		if (last_spike_fetched < spike_list.size())
+		{
+			std::vector<Spike_t> ret(spike_list.begin()+last_spike_fetched, spike_list.end());
+			LOGGER("Last: " << last_spike_fetched);
+			last_spike_fetched = spike_list.size();
+			return ret;
+		}
+		else return {};
 	}
 }

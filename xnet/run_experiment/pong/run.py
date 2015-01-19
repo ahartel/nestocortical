@@ -3,11 +3,10 @@ import os, sys
 import numpy as np
 from sets import Set
 import matplotlib.pyplot as plt
-from psth import psth
 
 image_width = 16
 image_height = 16
-num_repetitions = 2000
+num_repetitions = 1000
 neurons = range(512,560)
 
 color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
@@ -20,7 +19,7 @@ color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
 if not os.path.exists('results'):
     os.makedirs('results')
 
-#os.system('../../bin/xnet_balls '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+os.system('../../bin/xnet_pong '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 
 if 0:
     for neuron in neurons:
@@ -48,40 +47,13 @@ if 0:
         plt.title(neuron)
         plt.imshow(weight_diff)
 
-# load order
-stimuli = np.loadtxt('./results/xnet_balls_order',delimiter=',')
+# load record
+game_record = np.loadtxt('./results/pong_record',delimiter=',',skiprows=1)
 # load spikes
-data = np.loadtxt('./results/xnet_balls_spikes.dat', delimiter=',')
-# generate Peri-Stimulus Time Histogram
-psth = psth(stimuli, data, 10)
+#data = np.loadtxt('./results/xnet_pong_spikes.dat', delimiter=',')
 
-#import pprint
-#pp = pprint.PrettyPrinter()
-#pp.pprint(psth[0.0])
-
-fig, axes = plt.subplots(nrows=len(psth), ncols=3)
-
-for ax, col in zip(axes[0], range(len(psth.itervalues().next()))):
-    ax.set_title(col)
-
-for ax, row in zip(axes[:,0], psth):
-    ax.set_ylabel(row)
-
-x = 0
-y = 0
-for stimulus,groups in psth.iteritems():
-    for group in [groups[0],groups[5],groups[-1]]:
-        ax = axes[y][x]
-        for nrn, times in group.iteritems():
-            mean = np.mean(times)
-            std = np.std(times)
-            num = len(times)
-            ax.errorbar(mean,nrn,xerr=std,marker='o',color=color_lookup[num],ecolor=color_lookup[num])
-
-        x += 1
-    y += 1
-    x = 0
-
+plt.plot(game_record[:,0],game_record[:,2])
+plt.plot(game_record[:,0],game_record[:,3])
 
 # show figures
 plt.show()

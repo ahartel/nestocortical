@@ -1,5 +1,4 @@
 #pragma once
-#include <tuple>
 #include <vector>
 #include "xnet_types.h"
 #include <math.h>
@@ -23,9 +22,9 @@ public:
 
 	vector<vector<bool>> generate_image(Realtime_t t);
 
-	tuple<double,double> get_ball_center(Realtime_t t) const;
+	pos2D get_ball_center(Realtime_t t) const;
 
-	float distance(float x, float y, tuple<double,double> center);
+	float distance(float x, float y, pos2D center);
 
 	void calculate_ball_start();
 
@@ -34,7 +33,7 @@ public:
 private:
 	float image_width, image_height;
 	float angle, velocity, ball_radius, start_time;
-	tuple<double,double> ball_start;
+	pos2D ball_start;
 
 };
 

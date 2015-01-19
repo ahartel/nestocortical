@@ -1,3 +1,4 @@
+#include <tuple>
 #include "BallCamera.h"
 #include "logger.h"
 
@@ -33,7 +34,7 @@
 	}
 
 	inline
-	tuple<double,double> BallCamera::get_ball_center(Realtime_t t) const
+	pos2D BallCamera::get_ball_center(Realtime_t t) const
 	{
 		return make_tuple(
 			cos(angle)*velocity*(t-start_time) + get<0>(ball_start),
@@ -42,7 +43,7 @@
 	}
 
 	inline
-	float BallCamera::distance(float x, float y, tuple<double,double> center)
+	float BallCamera::distance(float x, float y, pos2D center)
 	{
 		float x_coord = image_width/-2.0  + x;
 		float y_coord = image_height/-2.0 + y;

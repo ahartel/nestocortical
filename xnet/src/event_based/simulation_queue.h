@@ -20,7 +20,8 @@ namespace xnet {
 	public:
 		Simulation () :
 			time(0),
-			eventQueue()
+			eventQueue(),
+			last_spike_fetched(0)
 		{
 		}
 		void run(size_t num);
@@ -31,8 +32,8 @@ namespace xnet {
 		Population create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr, UniformRange_t ti);
 		Population create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr, NormalRange_t ti);
 		// connection stuff
-		void connect_all_to_all_identical(Population const& p1, Population const& p2, Weight const& w);
-		void connect_all_to_all_normal(Population const& p1, Population const& p2, NormalRange_t wmin, NormalRange_t wmax, NormalRange_t winit, NormalRange_t ap, NormalRange_t am);
+		void connect_all_to_all_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
+		void connect_all_to_all_normal(Population const& p1, Population const& p2, NormalRange_t wmin, NormalRange_t wmax, NormalRange_t winit, NormalRange_t ap, NormalRange_t am, NormalRange_t ltp);
 		void connect_all_to_all_wta(Population const& p);
 
 		void add_event(event * e);
@@ -46,12 +47,13 @@ namespace xnet {
 		Time_t get_time() const;
 		void add_spike(Time_t t, Id_t nrn);
 		std::vector<Spike_t>& get_spikes();
+		std::vector<Spike_t> get_new_spikes();
 		void print_spikes(std::string filename, Realtime_t scale=1.0);
 		void print_pre_weights(Population const& pop, std::string filename) const;
 		void print_pre_weights(Id_t nrn, std::string filename) const;
 	protected:
 		void processEvent(event* ev);
-		void add_synapse(Id_t, Id_t, Weight);
+		void add_synapse(Id_t, Id_t, Weight, Timeconst_t);
 
 		std::default_random_engine generator;
 		std::vector<Neuron> neurons;
@@ -62,5 +64,6 @@ namespace xnet {
 		std::priority_queue<event*, std::vector<event*, std::allocator<event*> >,
 			eventComparator> eventQueue;
 		std::vector<Spike_t> spike_list;
+		std::size_t last_spike_fetched;
 	};
 }

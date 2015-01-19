@@ -4,14 +4,14 @@
 namespace xnet
 {
 	//template <class WT>
-	Synapse::Synapse(std::size_t pre, std::size_t post, Weight const& w, bool hard_inhibit) :
+	Synapse::Synapse(std::size_t pre, std::size_t post, Weight const& w, Timeconst_t ltp, bool hard_inhibit) :
 		_delay(0),
 		pre_neuron(pre),
 		post_neuron(post),
 		_weight(w),
 		hard(hard_inhibit),
 		last_pre_time(-1),
-		T_ltp(15)
+		T_ltp(ltp)
 	{
 	}
 

@@ -8,7 +8,7 @@ namespace xnet {
 	class Synapse
 	{
 	public:
-		Synapse(std::size_t pre, std::size_t post, Weight const& w, bool hard_inhibit=false);
+		Synapse(std::size_t pre, std::size_t post, Weight const& w, Timeconst_t ltp, bool hard_inhibit=false);
 		Id_t get_post_neuron() const;
 		Current_t eval_pre_event(Time_t t);
 		bool hard_inhibit() const;

@@ -27,3 +27,6 @@ struct UniformRange_t : public ParamRange_t
 	float low() const { return std::get<0>(range);}
 	float high() const { return std::get<1>(range);}
 };
+
+
+typedef std::tuple<float,float> pos2D;

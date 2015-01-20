@@ -12,7 +12,7 @@ TEST(SIM,SIMPLE_TRANSMIT)
 
 	auto pop1 = theSimulation.create_population_fixed(1,{1000.0,50.0,100,15});
 	auto pop2 = theSimulation.create_population_fixed(2,{1000.0,50.0,100,15});
-	theSimulation.connect_all_to_all_identical(pop1,pop2,{1000.0,1.0,1001.0,0.0,0.0},15.0);
+	theSimulation.connect_all_to_all_identical(pop1,pop2,Weight(1000.0,1.0,1001.0,0.0,0.0),15.0);
 
 	theSimulation.add_event(new pre_syn_event(0,0));
 	theSimulation.run_until_empty();

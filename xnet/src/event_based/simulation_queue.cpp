@@ -205,6 +205,7 @@ namespace xnet {
 
 	void Simulation::connect_all_to_all_wta(Population const& p)
 	{
+		LOGGER("Connecting WTA");
 		// iterate over source neurons
 		for (unsigned int i=0; i<p.size(); ++i)
 		{
@@ -215,8 +216,9 @@ namespace xnet {
 			// iterate over target neurons
 			for (unsigned int j=0; j<p.size(); ++j)
 			{
+				LOGGER(i<<","<<j);
 				if (i!=j)
-					synapses.push_back(Synapse(p1_index,p.get(j),{},true));
+					synapses.push_back(Synapse(p1_index,p.get(j),Weight({}),0,true));
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
@@ -252,7 +254,7 @@ namespace xnet {
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
 				Id_t post = p2.get(j);
-				add_synapse(p1_index, post, {winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)}, ltp_dist(generator));
+				add_synapse(p1_index, post, Weight(winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)), ltp_dist(generator));
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}

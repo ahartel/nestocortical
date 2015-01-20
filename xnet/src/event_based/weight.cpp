@@ -1,4 +1,5 @@
 #include "weight.h"
+#include <math.h>
 
 namespace xnet
 {
@@ -28,15 +29,25 @@ namespace xnet
 
 	void Weight::update_pos()
 	{
-		w += ap;
-		if (w > wmax)
-			w = wmax;
+		if (w >= 0)
+		{
+			w += ap;
+			if (w > wmax)
+			{
+				w = wmax;
+			}
+		}
 	}
 
 	void Weight::update_neg()
 	{
-		w -= am;
-		if (w < wmin)
-			w = wmin;
+		if (w >= 0)
+		{
+			w -= am;
+			if (w < wmin)
+			{
+				w = wmin;
+			}
+		}
 	}
 }

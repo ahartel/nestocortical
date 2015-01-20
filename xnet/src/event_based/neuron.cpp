@@ -51,4 +51,9 @@ namespace xnet
 		last_inhibit_time = t;
 		inhibited = true;
 	}
+
+	Time_t Neuron::get_delay() const
+	{
+		return params.Tdelay;
+	}
 }

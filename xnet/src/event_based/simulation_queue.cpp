@@ -68,7 +68,7 @@ namespace xnet {
 			if (fired)
 			{
 				LOGGER("Neuron " << linked_object << " fired");
-				add_event(new pre_syn_event(time,linked_object));
+				add_event(new pre_syn_event(time+neuron->get_delay(),linked_object));
 				add_event(new post_syn_event(time,linked_object));
 			}
 		}
@@ -123,7 +123,13 @@ namespace xnet {
 		return pop;
 	}
 
-	Population Simulation::create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr, UniformRange_t ti)
+	Population Simulation::create_population_uniform(
+		std::size_t s,
+		UniformRange_t th,
+		UniformRange_t tm,
+		UniformRange_t tr,
+		UniformRange_t ti,
+		UniformRange_t td)
 	{
 		/* Create a population and a number of s neurons.
 			The population represents the range of the
@@ -135,6 +141,7 @@ namespace xnet {
 		std::uniform_real_distribution<Timeconst_t> tau_mem(tm.low(),tm.high());
 		std::uniform_int_distribution<Time_t> tau_ref(tr.low(),tr.high());
 		std::uniform_int_distribution<Time_t> Tinhibit(ti.low(),ti.high());
+		std::uniform_int_distribution<Time_t> Tdelay(td.low(),td.high());
 
 		Population pop = create_population_start();
 		for (unsigned int i=0;i<s;++i)
@@ -150,7 +157,13 @@ namespace xnet {
 		return pop;
 	}
 
-	Population Simulation::create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr, NormalRange_t ti)
+	Population Simulation::create_population_normal(
+		std::size_t s,
+		NormalRange_t th,
+		NormalRange_t tm,
+		NormalRange_t tr,
+		NormalRange_t ti,
+		NormalRange_t td)
 	{
 		/* Create a population and a number of s neurons.
 			The population represents the range of the
@@ -162,6 +175,7 @@ namespace xnet {
 		std::normal_distribution<Timeconst_t> tau_mem(tm.mean(),tm.std());
 		std::normal_distribution<Realtime_t> tau_ref(tr.mean(),tr.std());
 		std::normal_distribution<Realtime_t> Tinhibit(ti.mean(),ti.std());
+		std::normal_distribution<Realtime_t> Tdelay(td.mean(),td.std());
 
 		Population pop = create_population_start();
 #pragma GCC diagnostic push
@@ -172,7 +186,8 @@ namespace xnet {
 									V_th(generator),
 									tau_mem(generator),
 									tau_ref(generator),
-									Tinhibit(generator)
+									Tinhibit(generator),
+									Tdelay(generator)
 								});
 		}
 #pragma GCC diagnostic pop
@@ -271,7 +286,7 @@ namespace xnet {
 	void Simulation::add_event(event * e)
 	{
 		eventQueue.push(e);
-		LOGGER("Adding event for time " << e->time << " object " << e->get_linked_object_id());
+		LOGGER("Adding event of type " << e->get_type() << " for time " << e->time << " object " << e->get_linked_object_id());
 	}
 
 	void Simulation::run_until_empty()

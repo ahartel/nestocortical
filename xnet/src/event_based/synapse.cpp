@@ -5,7 +5,6 @@ namespace xnet
 {
 	//template <class WT>
 	Synapse::Synapse(std::size_t pre, std::size_t post, Weight const& w, Timeconst_t ltp, bool hard_inhibit) :
-		_delay(0),
 		pre_neuron(pre),
 		post_neuron(post),
 		_weight(w),

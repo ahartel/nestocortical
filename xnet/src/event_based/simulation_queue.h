@@ -29,11 +29,34 @@ namespace xnet {
 		Population create_population_start();
 		void create_population_add_neuron(Neuron_params const& p);
 		Population create_population_fixed(std::size_t s, Neuron_params const& params);
-		Population create_population_uniform(std::size_t s, UniformRange_t th, UniformRange_t tm, UniformRange_t tr, UniformRange_t ti);
-		Population create_population_normal(std::size_t s, NormalRange_t th, NormalRange_t tm, NormalRange_t tr, NormalRange_t ti);
+		Population create_population_uniform(
+			std::size_t s,
+			UniformRange_t th,
+			UniformRange_t tm,
+			UniformRange_t tr,
+			UniformRange_t ti,
+			UniformRange_t td
+		);
+		Population create_population_normal(
+			std::size_t s,
+			NormalRange_t th,
+			NormalRange_t tm,
+			NormalRange_t tr,
+			NormalRange_t ti,
+			NormalRange_t td
+		);
 		// connection stuff
 		void connect_all_to_all_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
-		void connect_all_to_all_normal(Population const& p1, Population const& p2, NormalRange_t wmin, NormalRange_t wmax, NormalRange_t winit, NormalRange_t ap, NormalRange_t am, NormalRange_t ltp);
+		void connect_all_to_all_normal(
+			Population const& p1,
+			Population const& p2,
+			NormalRange_t wmin,
+			NormalRange_t wmax,
+			NormalRange_t winit,
+			NormalRange_t ap,
+			NormalRange_t am,
+			NormalRange_t ltp
+		);
 		void connect_all_to_all_wta(Population const& p);
 
 		void add_event(event * e);

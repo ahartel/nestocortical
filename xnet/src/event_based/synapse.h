@@ -21,7 +21,6 @@ namespace xnet {
 		Id_t pre_neuron, post_neuron;
 		Time_t last_pre_time;
 		Weight _weight;
-		Time_t _delay;
 		bool hard;
 	};
 }

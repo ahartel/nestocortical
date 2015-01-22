@@ -22,6 +22,8 @@ def build(bld):
             'src/input/BallCamera.cpp',
             'src/input/DVS.cpp',
             'src/input/pongdvs.cpp',
+            'src/input/pongpoisson.cpp',
+            'src/input/pong.cpp',
         ],
         use = 'XNET',
         target = 'xnet_input',
@@ -84,3 +86,11 @@ def build(bld):
         target = 'xnet_pong',
         install_path = 'bin',
     )
+
+    bld.program (
+        source = ['src/experiments/xnet_pong_class.cpp'],
+        use = ['xnet','xnetevent'],
+        target = 'xnet_pong_class',
+        install_path = 'bin',
+    )
+

@@ -6,9 +6,9 @@ namespace xnet
 	class RangeType
 	{
 	public:
-		RangeType();
-		RangeType(std::size_t s);
-		RangeType(std::size_t s, std::size_t e);
+		explicit RangeType();
+		explicit RangeType(std::size_t s);
+		explicit RangeType(std::size_t s, std::size_t e);
 		void set_start(std::size_t s);
 		void set_end(std::size_t e);
 		std::size_t size() const;

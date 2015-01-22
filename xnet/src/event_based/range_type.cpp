@@ -8,7 +8,7 @@ namespace xnet
 	{
 	}
 
-	RangeType::RangeType(std::size_t s, std::size_t e) : _start(s), _end(e+1), _size(-1)
+	RangeType::RangeType(std::size_t s, std::size_t e) : _start(s), _end(e), _size(-1)
 	{
 		update_size();
 	}

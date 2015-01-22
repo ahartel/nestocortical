@@ -10,8 +10,9 @@ namespace xnet
 	class Population : public RangeType
 	{
 	public:
-		Population();
-		Population(std::size_t s);
+		explicit Population();
+		explicit Population(std::size_t s);
+		explicit Population(std::size_t s, std::size_t e);
 	private:
 	};
 }

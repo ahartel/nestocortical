@@ -26,7 +26,7 @@ namespace xnet {
 		}
 		void run(size_t num);
 		// population stuff
-		Population create_population_start();
+		Population create_population_start(std::size_t size);
 		void create_population_add_neuron(Neuron_params const& p);
 		Population create_population_fixed(std::size_t s, Neuron_params const& params);
 		Population create_population_uniform(
@@ -47,6 +47,7 @@ namespace xnet {
 		);
 		// connection stuff
 		void connect_all_to_all_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
+		void connect_one_to_one_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
 		void connect_all_to_all_normal(
 			Population const& p1,
 			Population const& p2,

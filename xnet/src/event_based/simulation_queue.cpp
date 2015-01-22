@@ -67,7 +67,7 @@ namespace xnet {
 			bool fired = neuron->add_current_evolve(time,psp_evt->get_current());
 			if (fired)
 			{
-				LOGGER("Neuron " << linked_object << " fired");
+				LOGGER("Neuron " << linked_object << " fired with delay " << neuron->get_delay());
 				add_event(new pre_syn_event(time+neuron->get_delay(),linked_object));
 				add_event(new post_syn_event(time,linked_object));
 			}
@@ -92,8 +92,10 @@ namespace xnet {
 		}
 	}
 
-	Population Simulation::create_population_start()
+	inline
+	Population Simulation::create_population_start(std::size_t size)
 	{
+		LOGGER("Creating population of size " << size << " starting at " << neurons.size());
 		Population pop;
 		pop.set_start(neurons.size());
 		return pop;
@@ -114,7 +116,7 @@ namespace xnet {
 			Additionally, there is a SynapseRange object
 			createrd for every neuron.
 		*/
-		Population pop = create_population_start();
+		Population pop = create_population_start(s);
 		for (unsigned int i=0;i<s;++i)
 		{
 			create_population_add_neuron(params);
@@ -143,7 +145,7 @@ namespace xnet {
 		std::uniform_int_distribution<Time_t> Tinhibit(ti.low(),ti.high());
 		std::uniform_int_distribution<Time_t> Tdelay(td.low(),td.high());
 
-		Population pop = create_population_start();
+		Population pop = create_population_start(s);
 		for (unsigned int i=0;i<s;++i)
 		{
 			create_population_add_neuron({
@@ -177,7 +179,7 @@ namespace xnet {
 		std::normal_distribution<Realtime_t> Tinhibit(ti.mean(),ti.std());
 		std::normal_distribution<Realtime_t> Tdelay(td.mean(),td.std());
 
-		Population pop = create_population_start();
+		Population pop = create_population_start(s);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnarrowing"
 		for (unsigned int i=0;i<s;++i)
@@ -201,6 +203,7 @@ namespace xnet {
 		Weight const& w,
 		Timeconst_t ltp)
 	{
+		LOGGER("Connecting Population ("<<p1.begin()<<"-"<<p1.end()<<") to population ("<<p2.begin()<<"-"<<p2.end()<<") all-to-all");
 		// iterate over source neurons
 		for (unsigned int i=0; i<p1.size(); ++i)
 		{
@@ -218,9 +221,33 @@ namespace xnet {
 		}
 	}
 
+	void Simulation::connect_one_to_one_identical(
+		Population const& p1,
+		Population const& p2,
+		Weight const& w,
+		Timeconst_t ltp)
+	{
+		if (p1.size() != p2.size())
+			throw std::out_of_range("Populations mus be of equal size in Simulation::connect_one_to_one_identical");
+
+		LOGGER("Connecting Population ("<<p1.begin()<<"-"<<p1.end()<<") to population ("<<p2.begin()<<"-"<<p2.end()<<") one-to-one");
+		// iterate over source neurons
+		for (unsigned int i=0; i<p1.size(); ++i)
+		{
+			auto p1_index = p1.get(i);
+			// store synapse range in pre_syn_lookup
+			SynapseRange range(synapses.size());
+			pre_syn_lookup[p1_index].push_back(range);
+
+			Id_t post = p2.get(i);
+			add_synapse(p1_index,post,w,ltp);
+
+			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
+		}
+	}
+
 	void Simulation::connect_all_to_all_wta(Population const& p)
 	{
-		LOGGER("Connecting WTA");
 		// iterate over source neurons
 		for (unsigned int i=0; i<p.size(); ++i)
 		{
@@ -231,7 +258,6 @@ namespace xnet {
 			// iterate over target neurons
 			for (unsigned int j=0; j<p.size(); ++j)
 			{
-				LOGGER(i<<","<<j);
 				if (i!=j)
 					synapses.push_back(Synapse(p1_index,p.get(j),Weight({}),0,true));
 			}
@@ -250,6 +276,7 @@ namespace xnet {
 		NormalRange_t ltp
 	)
 	{
+		LOGGER("Connecting Population ("<<p1.begin()<<"-"<<p1.end()<<") to population ("<<p2.begin()<<"-"<<p2.end()<<")");
 		// distributions to sample from
 		std::normal_distribution<Current_t> wmin_dist(wmin.mean(),wmin.std());
 		std::normal_distribution<Current_t> wmax_dist(wmax.mean(),wmax.std());
@@ -280,7 +307,7 @@ namespace xnet {
 	{
 		synapses.push_back(Synapse(pre,post,w,ltp));
 		post_syn_lookup[post].push_back(synapses.size()-1);
-		//LOGGER("Adding pre_synaptic synapse # " << synapses.size()-1 << " for neuron " << post);
+		LOGGER("Adding pre_synaptic synapse # " << synapses.size()-1 << " from neuron " << pre << " to neuron " << post);
 	}
 
 	void Simulation::add_event(event * e)

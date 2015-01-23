@@ -2,6 +2,7 @@
 #include <queue>
 #include <random>
 #include <string>
+#include <map>
 #include "event_based/weight.h"
 #include "event_based/neuron.h"
 #include "event_based/neuron_params.h"
@@ -18,12 +19,7 @@ namespace xnet {
 	class Simulation
 	{
 	public:
-		Simulation () :
-			time(0),
-			eventQueue(),
-			last_spike_fetched(0)
-		{
-		}
+		Simulation ();
 		void run(size_t num);
 		// population stuff
 		Population create_population_start(std::size_t size);
@@ -78,10 +74,16 @@ namespace xnet {
 	protected:
 		void processEvent(event* ev);
 		void add_synapse(Id_t, Id_t, Weight, Timeconst_t);
+		void flush_psp_cache();
+		void add_psp_cache(Id_t neuron, Current_t current);
 
 		std::default_random_engine generator;
+		unsigned int number_of_neurons;
 		std::vector<Neuron> neurons;
 		std::vector<Synapse> synapses;
+		std::map<Id_t,Current_t> psp_cache;
+		Time_t cache_valid_time;
+		bool cache_dirty;
 		std::vector<std::vector<SynapseRange>> pre_syn_lookup;
 		std::vector<std::vector<Id_t>> post_syn_lookup;
 		Time_t time;

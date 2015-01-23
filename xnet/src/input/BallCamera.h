@@ -24,7 +24,7 @@ public:
 
 	pos2D get_ball_center(Realtime_t t) const;
 
-	float distance(float x, float y, pos2D center);
+	float distance(float x, float y, float x_center_dist, float y_center_dist);
 
 	void calculate_ball_start();
 

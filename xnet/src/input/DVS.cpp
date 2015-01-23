@@ -30,9 +30,9 @@ using namespace std;
 		// but I seriuosly don't want to iterate twice over the image space
 		vector<int> spikes;
 		vector<vector<int>> image_diff (image_height,vector<int>(image_width,0) );
-		for (int x=0; x<image_width; ++x)
+		for (int y=0; y<image_height; ++y)
 		{
-			for (int y=0; y<image_height; ++y)
+			for (int x=0; x<image_width; ++x)
 			{
 				image_diff[y][x] = int(image[y][x]) - int(previous_image[y][x]);
 				if (image_diff[y][x] > 0)

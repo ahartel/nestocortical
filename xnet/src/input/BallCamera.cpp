@@ -17,6 +17,8 @@
 	{
 		auto ball_center = get_ball_center(t);
 		LOGGER(get<0>(ball_center) << "," << get<1>(ball_center));
+		float x_center_distance = image_width/-2.0  - get<0>(ball_center);
+		float y_center_distance = image_height/-2.0 - get<1>(ball_center);
 
 		vector<vector<bool>> image(image_height,vector<bool>(image_width,false) );
 
@@ -24,7 +26,7 @@
 		{
 			for (int y=0; y<image_height; ++y)
 			{
-				if (distance(x,y,ball_center) < ball_radius)
+				if (distance(x,y,x_center_distance, y_center_distance) < ball_radius)
 				{
 					image[y][x] = true;
 				}
@@ -43,11 +45,11 @@
 	}
 
 	inline
-	float BallCamera::distance(float x, float y, pos2D center)
+	float BallCamera::distance(float x, float y, float x_center_dist, float y_center_dist)
 	{
-		float x_coord = image_width/-2.0  + x;
-		float y_coord = image_height/-2.0 + y;
-		float dist = sqrt(pow(x_coord-get<0>(center),2)+pow(y_coord-get<1>(center),2));
+		float x_coord = x_center_dist + x;
+		float y_coord = y_center_dist + y;
+		float dist = sqrt(pow(x_coord,2)+pow(y_coord,2));
 		return dist;
 	}
 

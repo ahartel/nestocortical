@@ -8,6 +8,16 @@ xnet::Simulation theSimulation;
 
 namespace xnet {
 
+	Simulation::Simulation () :
+			number_of_neurons(0),
+			cache_valid_time(0),
+			cache_dirty(false),
+			time(0),
+			eventQueue(),
+			last_spike_fetched(0)
+		{
+		}
+
 	void Simulation::run_one_event()
 	{
 		//LOGGER("eventQueue size: " << eventQueue.size());
@@ -28,11 +38,36 @@ namespace xnet {
 		}
 	}
 
+	void Simulation::flush_psp_cache()
+	{
+		LOGGER("Flushing psp cache");
+		if (cache_dirty)
+		{
+			for (std::map<Id_t,Current_t>::iterator it=psp_cache.begin(); it!=psp_cache.end(); ++it)
+			{
+				add_event(new psp_event(cache_valid_time,it->first,it->second));
+			}
+			psp_cache.clear();
+			cache_dirty = false;
+		}
+	}
+
+	inline
+	void Simulation::add_psp_cache(Id_t neuron, Current_t current)
+	{
+		psp_cache[neuron] += current;
+		cache_dirty = true;
+		cache_valid_time = time;
+	}
+
 	void Simulation::processEvent(event* ev) {
 		auto type = ev->get_type();
 		Id_t linked_object = ev->get_linked_object_id();
 		if (type == EventType::PRE)
 		{
+			if (time > cache_valid_time)
+				flush_psp_cache();
+
 			// add this spike to the global spike list
 			add_spike(time,linked_object);
 			// check if there are post-synaptic neurons to this neuron
@@ -50,7 +85,7 @@ namespace xnet {
 						{
 							Current_t current = syn->eval_pre_event(time);
 							LOGGER("Current: " << current);
-							add_event(new psp_event(time,syn->get_post_neuron(),current));
+							add_psp_cache(syn->get_post_neuron(),current);
 						}
 					}
 				}
@@ -60,6 +95,8 @@ namespace xnet {
 		}
 		else if (type == EventType::PSP)
 		{
+			flush_psp_cache();
+
 			psp_event* psp_evt = static_cast<psp_event*>(ev);
 
 			LOGGER("@" << time << " Processing psp event for post-synaptic neuron " << linked_object);
@@ -74,6 +111,8 @@ namespace xnet {
 		}
 		else if (type == EventType::PST)
 		{
+			flush_psp_cache();
+
 			for (Id_t syn_id : get_pre_synapse_ranges(linked_object))
 			{
 				LOGGER("@" << time << " Processing post_syn_event for neuron " << linked_object << " and synapse "<< syn_id);
@@ -86,6 +125,8 @@ namespace xnet {
 		}
 		else if (type == EventType::SIL)
 		{
+			flush_psp_cache();
+
 			LOGGER("@" << time << " Processing silence event for post-synaptic neuron " << linked_object);
 			Neuron* neuron = get_neuron_pointer(linked_object);
 			neuron->silence_neuron(time);
@@ -104,6 +145,7 @@ namespace xnet {
 	void Simulation::create_population_add_neuron(Neuron_params const& p)
 	{
 		neurons.push_back(Neuron(p));
+		number_of_neurons += 1;
 		pre_syn_lookup.push_back({});
 		post_syn_lookup.push_back({});
 	}

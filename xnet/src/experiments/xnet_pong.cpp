@@ -88,13 +88,8 @@ int main(int argc, char* argv[])
 	//									);
 
 	theSimulation.connect_all_to_all_identical(go_on,output,xnet::Weight(200.0,0.0,11000.0,0.0,0.0),15.0);
-	theSimulation.connect_all_to_all_identical(
-		xnet::Population(control.get(0),control.get(0)),
-		xnet::Population(output.get(0),output.get(0)),
-		xnet::Weight(3000.0,0.0,11000.0,0.0,0.0),15.0);
-	theSimulation.connect_all_to_all_identical(
-		xnet::Population(control.get(1),control.get(1)),
-		xnet::Population(output.get(1),output.get(1)),
+	theSimulation.connect_one_to_one_identical(
+		control,output,
 		xnet::Weight(3000.0,0.0,11000.0,0.0,0.0),15.0);
 
 	//theSimulation.connect_all_to_all_wta(intermediate);
@@ -133,7 +128,16 @@ int main(int argc, char* argv[])
 			// present the newly generated input data to the network
 			for (auto spike : input_spikes)
 			{
-				theSimulation.add_event(new xnet::pre_syn_event(time,std::get<1>(spike)));
+				auto nrn = std::get<1>(spike);
+				if (nrn >= num_dvs_addresses)
+				{
+					if (nrn < num_dvs_addresses+court_height/2)
+						theSimulation.add_event(new xnet::pre_syn_event(time,control.get(0)));
+					else if (nrn >= num_dvs_addresses+court_height/2)
+						theSimulation.add_event(new xnet::pre_syn_event(time,control.get(1)));
+				}
+				else
+					theSimulation.add_event(new xnet::pre_syn_event(time,nrn));
 			}
 			// add an event for the go on population
 			if (time%100 == 0)

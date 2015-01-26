@@ -1,4 +1,5 @@
 #include "pong.h"
+#include "logger.h"
 #include <fstream>
 
 Pong::Pong(int width, int height, pos2D v, float r, float pw) :
@@ -11,7 +12,8 @@ Pong::Pong(int width, int height, pos2D v, float r, float pw) :
 	velocity(v),
 	radius(r),
 	half_paddle_width(pw/2.0),
-	time(0)
+	time(0),
+	paddle_speed(height/(width/std::get<0>(v)))
 {
 	// start in the middle of the court at the left edge
 	position = std::make_tuple(court_width/-2.0, 0);
@@ -31,14 +33,22 @@ Pong::Pong(int width, int height, pos2D v, float r, float pw, std::string filena
 	file.close();
 }
 
-std::vector<Spike_t> Pong::advance(Realtime_t t, float paddle_speed)
+std::vector<Spike_t> Pong::advance(Realtime_t t, int target_pixel)
 {
+	LOGGER("Target pixel " <<target_pixel);
 	std::vector<Spike_t> output_spikes;
 
 	auto new_x = std::get<0>(position) + std::get<0>(velocity) * t;
 	auto new_y = std::get<1>(position) + std::get<1>(velocity) * t;
 
-	auto new_pp = paddle_pos + paddle_speed;
+	float new_pp;
+	if (float(target_pixel)-half_height > paddle_pos)
+		new_pp = paddle_pos+paddle_speed*t;
+	else if (float(target_pixel)-half_height < paddle_pos)
+		new_pp = paddle_pos-paddle_speed*t;
+	else
+		new_pp = paddle_pos;
+
 	if (new_pp + half_paddle_width > half_height)
 		paddle_pos = half_height-half_paddle_width;
 	else if (new_pp < half_paddle_width - half_height)

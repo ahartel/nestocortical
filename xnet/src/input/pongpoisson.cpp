@@ -4,16 +4,15 @@
 PongPoisson::PongPoisson(int width, int height, pos2D v, float r, float pw) :
 	Pong(width,height,v,r,pw),
 	on_rate(400.0),
-	off_rate(10.0),
-	distribution(0.0,1.0),
-	paddle_speed(height/(width/std::get<0>(v)))
+	off_rate(0.0),
+	distribution(0.0,1.0)
 {
 }
 
 PongPoisson::PongPoisson(int width, int height, pos2D v, float r, float pw, std::string filename) :
 	Pong(width,height,v,r,pw,filename),
 	on_rate(400.0),
-	off_rate(10.0),
+	off_rate(0.0),
 	distribution(0.0,1.0)
 {
 }

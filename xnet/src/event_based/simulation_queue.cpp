@@ -450,7 +450,6 @@ namespace xnet {
 		if (last_spike_fetched < spike_list.size())
 		{
 			std::vector<Spike_t> ret(spike_list.begin()+last_spike_fetched, spike_list.end());
-			LOGGER("Last: " << last_spike_fetched);
 			last_spike_fetched = spike_list.size();
 			return ret;
 		}

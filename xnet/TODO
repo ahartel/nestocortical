@@ -1,3 +1,29 @@
+* Finish xnet_pong (i.e. make it work)
+* Implement benchmark class
+The benchmark class could hav ethe following functions that can be
+re-implemented for each case:
+run()
+post_process()
+evaluate()
+Derived from an abstract base class one could implement a balls benchmark class
+that can then be derived further into different network implementations (e.g.
+soft inhibition, coba vs. cuba). These network implementations could be changed
+by only re-implementing the run() function.
+* Create benchmark run directories for the following implementations and
+ compare their performance according to the benchmark
+ - ball task as presented in Bichler 2012
+ - ball task with split receptive fields (8x8 input groups projecting to 4
+   groups with 2x2 neurons each, top layer identical)
+ - ball task with split receptive fields and soft inhibition
+ - ball task with split receptive fields, soft inhibition and delays
+ - add discretet weights
+ - adopt time constants
+ - STDP curve
+* Try hardware implementation (in simulation with ideal neurons and synapses)
+ of the most modified version
+
+* Implement xnet_traffic
 * Show that neurons that react are unique to the patterns by showing one plot
  which colors the neurons according to stimulus
 * Add Templating of Neuron and Synapse types
+

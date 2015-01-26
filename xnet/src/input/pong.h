@@ -8,7 +8,7 @@ class Pong
 public:
 	Pong(int width, int height, pos2D v, float r, float pw);
 	Pong(int width, int height, pos2D v, float r, float pw, std::string filename);
-	virtual std::vector<Spike_t> advance(Realtime_t t, float paddle_speed);
+	virtual std::vector<Spike_t> advance(Realtime_t t, int target_pixel);
 protected:
 	int court_width, court_height;
 	float half_width, half_height, neg_half_width, neg_half_height;
@@ -17,4 +17,5 @@ protected:
 	std::string logfile;
 	bool log;
 	Realtime_t time;
+	float paddle_speed;
 };

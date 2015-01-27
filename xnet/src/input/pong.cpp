@@ -99,3 +99,18 @@ std::vector<Spike_t> Pong::advance(Realtime_t t, int target_pixel)
 
 	return output_spikes;
 }
+
+pos2D Pong::get_velocity() const
+{
+	return velocity;
+}
+
+int Pong::get_court_width() const
+{
+	return court_width;
+}
+
+int Pong::get_court_height() const
+{
+	return court_height;
+}

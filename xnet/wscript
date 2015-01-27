@@ -6,11 +6,12 @@ def options(opt):
 def configure(conf):
     conf.load('g++')
 
-    conf.env.CXXFLAGS_XNET = ['-std=c++11']
+    conf.env.CXXFLAGS_XNET = ['-std=c++11','-g']
     if not conf.options.nolog:
         conf.env.CXXFLAGS_XNET.append('-DCOUT_ENABLED')
-        conf.env.CXXFLAGS_XNET.append('-g')
-    conf.env.INCLUDES_XNET = ['./src', './src/event_based/', './src/input/']
+
+    conf.env.INCLUDES_XNET = ['./src', './src/event_based/', './src/input/',
+    './src/connectors']
 
     conf.recurse('src/test')
 

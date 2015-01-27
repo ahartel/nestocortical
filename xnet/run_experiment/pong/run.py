@@ -50,8 +50,6 @@ if 1:
 plt.figure()
 # load record
 game_record = np.loadtxt('./results/pong_record',delimiter=',',skiprows=1)
-# load spikes
-#data = np.loadtxt('./results/xnet_pong_spikes.dat', delimiter=',')
 ax1 = plt.subplot(211)
 plt.plot(game_record[:,0],game_record[:,2])
 plt.plot(game_record[:,0],game_record[:,3])
@@ -71,6 +69,11 @@ for t,x,y,p in game_record:
             last_time = t
             counter = 0
             hits = 0
+
+plt.figure()
+spikes = np.loadtxt('./results/xnet_pong_spikes.dat',delimiter=',')
+plt.plot(spikes[:,1],spikes[:,0],'o')
+plt.grid()
 
 # show figures
 plt.show()

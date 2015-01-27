@@ -1,6 +1,6 @@
-* Finish xnet_pong (i.e. make it work)
+* Implement connectors and clean up inputs by adding Populations to them
 * Implement benchmark class
-The benchmark class could hav ethe following functions that can be
+The benchmark class could have the following functions that can be
 re-implemented for each case:
 run()
 post_process()

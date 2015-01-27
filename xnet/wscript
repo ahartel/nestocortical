@@ -79,23 +79,24 @@ def build(bld):
     )
 
     bld.program (
-        source = ['src/experiments/xnet_balls.cpp'],
+        source = ['src/experiments/xnet_balls_rect.cpp'],
         use = ['xnet','xnetevent'],
-        target = 'xnet_balls',
+        target = 'xnet_balls_rect',
         install_path = 'bin',
     )
 
     bld.program (
-        source = ['src/experiments/xnet_pong.cpp'],
+        source = ['src/experiments/xnet_pong_poisson_exp.cpp'],
         use = ['xnet','xnetevent'],
-        target = 'xnet_pong',
+        target = 'xnet_pong_poisson_exp',
         install_path = 'bin',
     )
 
     bld.program (
-        source = ['src/experiments/xnet_pong_class.cpp'],
+        source = ['src/experiments/xnet_pong_poisson_rect.cpp'],
         use = ['xnet','xnetevent'],
-        target = 'xnet_pong_class',
+        target = 'xnet_pong_poisson_rect',
         install_path = 'bin',
     )
+
 

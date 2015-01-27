@@ -10,10 +10,6 @@ image_height = 16
 num_repetitions = 2000
 neurons = range(512,560)
 
-color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
-    '#666666','#777777','#888888','#999999','#aaaaaa',
-    '#bbbbbb','#cccccc','#dddddd','#eeeeee','#ffffff']
-
 #print plt.style.available
 #plt.style.context('fivethirtyeight')
 
@@ -76,12 +72,16 @@ for stimulus,groups in psth.iteritems():
             mean = np.mean(times)
             std = np.std(times)
             num = len(times)
-            ax.errorbar(mean,nrn,xerr=std,marker='o',color='black')#color_lookup[num],ecolor=color_lookup[num])
+            ax.errorbar(mean,nrn,xerr=std,marker='o',color=str(float(num)/20.0))
+            ax.annotate(str(num),xy=(mean,nrn))
 
         x += 1
     y += 1
     x = 0
 
+plt.figure()
+plt.plot(data[:,1],data[:,0],'o')
+plt.grid()
 
 # show figures
 plt.show()

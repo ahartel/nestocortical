@@ -10,6 +10,8 @@
 #include "simulation_queue.h"
 #include "pongdvs.h"
 #include "pongpoisson.h"
+#include "expsynapse.h"
+#include "expweight.h"
 
 using namespace std;
 
@@ -55,7 +57,7 @@ int main(int argc, char* argv[])
 		filename_base+"/pong_record"
 	};
 
-	xnet::Simulation theSimulation;
+	xnet::SimulationQueue<xnet::ExpSynapse,xnet::ExpWeight> theSimulation;
 
 	auto input = theSimulation.create_population_normal(
 		num_dvs_addresses,
@@ -71,15 +73,15 @@ int main(int argc, char* argv[])
 	//	num_intermediate_neurons,
 	//	{3000.0,100.0,10,50} // neuron parameters
 	//);
-	auto output = theSimulation.create_population_fixed(num_output_neurons,{5000.0,100.0,100,100});
+	auto output = theSimulation.create_population_fixed(num_output_neurons,{5000.0,100.0,50,200});
 
 	theSimulation.connect_all_to_all_normal(input,output,
 											{1.0,0.2}, //wmin
-											{2000.0,400.0}, //wmax
+											{3000.0,600.0}, //wmax
 											{200.0,40.0}, // winit
-											{100.0,20.0}, // ap
-											{50.0,10.0}, // am
-											{300.0,60.0} // ltp
+											{150.0,30.0}, // ap
+											{150.0,30.0}, // am
+											{200.0,40.0} // ltp
 										);
 	//theSimulation.connect_all_to_all_normal(input,intermediate,
 	//										{1.0,0.2}, //wmin
@@ -99,7 +101,7 @@ int main(int argc, char* argv[])
 	//									);
 
 	theSimulation.connect_one_to_one_identical(control, output,
-		xnet::Weight(5000.0,0.0,11000.0,0.0,0.0),15.0);
+		xnet::ExpWeight(5000.0,0.0,11000.0,0.0,0.0),15.0);
 
 	//theSimulation.connect_all_to_all_wta(intermediate);
 	theSimulation.connect_all_to_all_wta(output);

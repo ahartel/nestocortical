@@ -1,10 +1,12 @@
 #include "logger.h"
+#include "event_based/rectweight.h"
+#include "event_based/expweight.h"
 #include "event_based/synapse.h"
 
 namespace xnet
 {
-	//template <class WT>
-	Synapse::Synapse(std::size_t pre, std::size_t post, Weight const& w, Timeconst_t ltp, bool hard_inhibit) :
+	template<class WT>
+	Synapse<WT>::Synapse(std::size_t pre, std::size_t post, WT const& w, Timeconst_t ltp, bool hard_inhibit) :
 		pre_neuron(pre),
 		post_neuron(post),
 		_weight(w),
@@ -14,45 +16,31 @@ namespace xnet
 	{
 	}
 
-	Current_t Synapse::eval_pre_event(Time_t t)
-	{
-		last_pre_time = t;
-		return get_current();
-	}
-
-	void Synapse::stdp(Time_t t)
-	{
-		// update
-		if (last_pre_time >= 0 && t-last_pre_time <= T_ltp)
-		{
-			_weight.update_pos();
-			LOGGER("Facilitating");
-		}
-		else
-		{
-			_weight.update_neg();
-			LOGGER("Depressing");
-		}
-	}
-
-	Id_t Synapse::get_post_neuron() const
+	template <class WT>
+	Id_t Synapse<WT>::get_post_neuron() const
 	{
 		return post_neuron;
 	}
 
+	template <class WT>
 	inline
-	Current_t Synapse::get_current() const
+	Current_t Synapse<WT>::get_current() const
 	{
 		return _weight.calc_current();
 	}
 
-	bool Synapse::hard_inhibit() const
+	template <class WT>
+	bool Synapse<WT>::hard_inhibit() const
 	{
 		return hard;
 	}
 
-	Weight Synapse::get_weight() const
+	template <class WT>
+	WT Synapse<WT>::get_weight() const
 	{
 		return _weight;
 	}
+
+	template class Synapse<RectWeight>;
+	template class Synapse<ExpWeight>;
 }

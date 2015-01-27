@@ -87,10 +87,10 @@ int main(int argc, char* argv[])
 	//										{100.0,10.0} // ltp
 	//									);
 
-	theSimulation.connect_all_to_all_identical(go_on,output,xnet::Weight(200.0,0.0,11000.0,0.0,0.0),15.0);
+	theSimulation.connect_all_to_all_identical(go_on,output,xnet::RectWeight(200.0,0.0,11000.0,0.0,0.0),15.0);
 	theSimulation.connect_one_to_one_identical(
 		control,output,
-		xnet::Weight(3000.0,0.0,11000.0,0.0,0.0),15.0);
+		xnet::RectWeight(3000.0,0.0,11000.0,0.0,0.0),15.0);
 
 	//theSimulation.connect_all_to_all_wta(intermediate);
 	theSimulation.connect_all_to_all_wta(output);

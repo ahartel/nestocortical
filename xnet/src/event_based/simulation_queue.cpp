@@ -4,11 +4,10 @@
 #include "event_based/logger.h"
 #include "event_based/simulation_queue.h"
 
-xnet::Simulation theSimulation;
-
 namespace xnet {
 
-	Simulation::Simulation () :
+	template<typename SYN, typename WT>
+	SimulationQueue<SYN,WT>::SimulationQueue () :
 			number_of_neurons(0),
 			cache_valid_time(0),
 			cache_dirty(false),
@@ -18,7 +17,8 @@ namespace xnet {
 		{
 		}
 
-	void Simulation::run_one_event()
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::run_one_event()
 	{
 		//LOGGER("eventQueue size: " << eventQueue.size());
 		event * nextEvent = eventQueue.top();
@@ -30,7 +30,8 @@ namespace xnet {
 		//LOGGER("eventQueue size: " << eventQueue.size());
 	}
 
-	void Simulation::run(size_t num) {
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::run(size_t num) {
 		for (unsigned int i=0; i<num; ++i)
 		{
 			if (!eventQueue.empty())
@@ -38,7 +39,8 @@ namespace xnet {
 		}
 	}
 
-	void Simulation::flush_psp_cache()
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::flush_psp_cache()
 	{
 		LOGGER("Flushing psp cache");
 		if (cache_dirty)
@@ -52,15 +54,17 @@ namespace xnet {
 		}
 	}
 
+	template<typename SYN, typename WT>
 	inline
-	void Simulation::add_psp_cache(Id_t neuron, Current_t current)
+	void SimulationQueue<SYN,WT>::add_psp_cache(Id_t neuron, Current_t current)
 	{
 		psp_cache[neuron] += current;
 		cache_dirty = true;
 		cache_valid_time = time;
 	}
 
-	void Simulation::processEvent(event* ev) {
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::processEvent(event* ev) {
 		auto type = ev->get_type();
 		Id_t linked_object = ev->get_linked_object_id();
 		if (type == EventType::PRE)
@@ -78,7 +82,7 @@ namespace xnet {
 					LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
 					for (std::size_t i=synrange.begin(); i<=synrange.end(); ++i)
 					{
-						Synapse* syn = get_synapse_pointer(i);
+						SYN* syn = get_synapse_pointer(i);
 						if (syn->hard_inhibit())
 							add_event(new silence_event(time,syn->get_post_neuron()));
 						else
@@ -116,11 +120,11 @@ namespace xnet {
 			for (Id_t syn_id : get_pre_synapse_ranges(linked_object))
 			{
 				LOGGER("@" << time << " Processing post_syn_event for neuron " << linked_object << " and synapse "<< syn_id);
-				Synapse* syn = get_synapse_pointer(syn_id);
+				SYN* syn = get_synapse_pointer(syn_id);
 				if (syn->hard_inhibit())
 				{} // pass
 				else
-					syn->stdp(time);
+					syn->eval_post_event(time);
 			}
 		}
 		else if (type == EventType::SIL)
@@ -133,8 +137,9 @@ namespace xnet {
 		}
 	}
 
+	template<typename SYN, typename WT>
 	inline
-	Population Simulation::create_population_start(std::size_t size)
+	Population SimulationQueue<SYN,WT>::create_population_start(std::size_t size)
 	{
 		LOGGER("Creating population of size " << size << " starting at " << neurons.size());
 		Population pop;
@@ -142,7 +147,8 @@ namespace xnet {
 		return pop;
 	}
 
-	void Simulation::create_population_add_neuron(Neuron_params const& p)
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::create_population_add_neuron(Neuron_params const& p)
 	{
 		neurons.push_back(Neuron(p));
 		number_of_neurons += 1;
@@ -150,7 +156,8 @@ namespace xnet {
 		post_syn_lookup.push_back({});
 	}
 
-	Population Simulation::create_population_fixed(std::size_t s, Neuron_params const& params)
+	template<typename SYN, typename WT>
+	Population SimulationQueue<SYN,WT>::create_population_fixed(std::size_t s, Neuron_params const& params)
 	{
 		/* Create a population and a number of s neurons.
 			The population represents the range of the
@@ -167,7 +174,8 @@ namespace xnet {
 		return pop;
 	}
 
-	Population Simulation::create_population_uniform(
+	template<typename SYN, typename WT>
+	Population SimulationQueue<SYN,WT>::create_population_uniform(
 		std::size_t s,
 		UniformRange_t th,
 		UniformRange_t tm,
@@ -201,7 +209,8 @@ namespace xnet {
 		return pop;
 	}
 
-	Population Simulation::create_population_normal(
+	template<typename SYN, typename WT>
+	Population SimulationQueue<SYN,WT>::create_population_normal(
 		std::size_t s,
 		NormalRange_t th,
 		NormalRange_t tm,
@@ -239,10 +248,11 @@ namespace xnet {
 		return pop;
 	}
 
-	void Simulation::connect_all_to_all_identical(
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::connect_all_to_all_identical(
 		Population const& p1,
 		Population const& p2,
-		Weight const& w,
+		WT const& w,
 		Timeconst_t ltp)
 	{
 		LOGGER("Connecting Population ("<<p1.begin()<<"-"<<p1.end()<<") to population ("<<p2.begin()<<"-"<<p2.end()<<") all-to-all");
@@ -263,14 +273,15 @@ namespace xnet {
 		}
 	}
 
-	void Simulation::connect_one_to_one_identical(
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::connect_one_to_one_identical(
 		Population const& p1,
 		Population const& p2,
-		Weight const& w,
+		WT const& w,
 		Timeconst_t ltp)
 	{
 		if (p1.size() != p2.size())
-			throw std::out_of_range("Populations mus be of equal size in Simulation::connect_one_to_one_identical");
+			throw std::out_of_range("Populations mus be of equal size in SimulationQueue::connect_one_to_one_identical");
 
 		LOGGER("Connecting Population ("<<p1.begin()<<"-"<<p1.end()<<") to population ("<<p2.begin()<<"-"<<p2.end()<<") one-to-one");
 		// iterate over source neurons
@@ -288,7 +299,8 @@ namespace xnet {
 		}
 	}
 
-	void Simulation::connect_all_to_all_wta(Population const& p)
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::connect_all_to_all_wta(Population const& p)
 	{
 		// iterate over source neurons
 		for (unsigned int i=0; i<p.size(); ++i)
@@ -301,13 +313,14 @@ namespace xnet {
 			for (unsigned int j=0; j<p.size(); ++j)
 			{
 				if (i!=j)
-					synapses.push_back(Synapse(p1_index,p.get(j),Weight({}),0,true));
+					synapses.push_back(SYN(p1_index,p.get(j),WT({}),0,true));
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
 	}
 
-	void Simulation::connect_all_to_all_normal(
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::connect_all_to_all_normal(
 		Population const& p1,
 		Population const& p2,
 		NormalRange_t wmin,
@@ -338,75 +351,87 @@ namespace xnet {
 			for (unsigned int j=0; j<p2.size(); ++j)
 			{
 				Id_t post = p2.get(j);
-				add_synapse(p1_index, post, Weight(winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)), ltp_dist(generator));
+				add_synapse(p1_index, post, WT(winit_dist(generator),wmin_dist(generator),wmax_dist(generator),ap_dist(generator),am_dist(generator)), ltp_dist(generator));
 			}
 			pre_syn_lookup[p1_index].back().set_end(synapses.size()-1);
 		}
 	}
 
+	template<typename SYN, typename WT>
 	inline
-	void Simulation::add_synapse(Id_t pre, Id_t post, Weight w, Timeconst_t ltp)
+	void SimulationQueue<SYN,WT>::add_synapse(Id_t pre, Id_t post, WT w, Timeconst_t ltp)
 	{
-		synapses.push_back(Synapse(pre,post,w,ltp));
+		synapses.push_back(SYN(pre,post,w,ltp));
 		post_syn_lookup[post].push_back(synapses.size()-1);
 		LOGGER("Adding pre_synaptic synapse # " << synapses.size()-1 << " from neuron " << pre << " to neuron " << post);
 	}
 
-	void Simulation::add_event(event * e)
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::add_event(event * e)
 	{
 		eventQueue.push(e);
 		LOGGER("Adding event of type " << e->get_type() << " for time " << e->time << " object " << e->get_linked_object_id());
 	}
 
-	void Simulation::run_until_empty()
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::run_until_empty()
 	{
 		while (!eventQueue.empty()) {
 			run_one_event();
 		}
 	}
 
-	std::vector<Id_t> Simulation::get_pre_synapse_ranges(Id_t const& neuron) const
+	template<typename SYN, typename WT>
+	std::vector<Id_t> SimulationQueue<SYN,WT>::get_pre_synapse_ranges(Id_t const& neuron) const
 	{
 		return post_syn_lookup[neuron];
 	}
 
-	std::vector<SynapseRange> Simulation::get_synapse_ranges(Id_t const& neuron) const
+	template<typename SYN, typename WT>
+	std::vector<SynapseRange> SimulationQueue<SYN,WT>::get_synapse_ranges(Id_t const& neuron) const
 	{
 		return pre_syn_lookup[neuron];
 	}
 
-	Synapse* Simulation::get_synapse_pointer(Id_t const& synapse)
+	template<typename SYN, typename WT>
+	SYN* SimulationQueue<SYN,WT>::get_synapse_pointer(Id_t const& synapse)
 	{
 		return &(synapses[synapse]);
 	}
 
-	Synapse const* Simulation::get_synapse_pointer(Id_t const& synapse) const
+	template<typename SYN, typename WT>
+	SYN const* SimulationQueue<SYN,WT>::get_synapse_pointer(Id_t const& synapse) const
 	{
 		return &(synapses[synapse]);
 	}
 
 
-	Neuron* Simulation::get_neuron_pointer(Id_t const& nrn)
+	template<typename SYN, typename WT>
+	Neuron* SimulationQueue<SYN,WT>::get_neuron_pointer(Id_t const& nrn)
 	{
 		return &(neurons[nrn]);
 	}
 
-	Time_t Simulation::get_time() const
+	template<typename SYN, typename WT>
+	Time_t SimulationQueue<SYN,WT>::get_time() const
 	{
 		return time;
 	}
 
-	std::vector<Spike_t>& Simulation::get_spikes()
+	template<typename SYN, typename WT>
+	std::vector<Spike_t>& SimulationQueue<SYN,WT>::get_spikes()
 	{
 		return spike_list;
 	}
 
-	void Simulation::add_spike(Time_t t, Id_t nrn)
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::add_spike(Time_t t, Id_t nrn)
 	{
 		spike_list.push_back(std::make_tuple(t,nrn));
 	}
 
-	void Simulation::print_spikes(std::string filename, Realtime_t scale)
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::print_spikes(std::string filename, Realtime_t scale)
 	{
 		std::ofstream file(filename,std::ios::out);
 		for (auto pair : spike_list)
@@ -416,19 +441,21 @@ namespace xnet {
 		file.close();
 	}
 
-	void Simulation::print_pre_weights(Id_t nrn, std::string filename) const
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::print_pre_weights(Id_t nrn, std::string filename) const
 	{
 		std::ofstream file(filename,std::ios::out);
 		for (Id_t syn_id : get_pre_synapse_ranges(nrn))
 		{
-			Synapse const* syn = get_synapse_pointer(syn_id);
+			SYN const* syn = get_synapse_pointer(syn_id);
 			file << syn->get_weight().calc_current() << "\n";
 		}
 		file.close();
 
 	}
 
-	void Simulation::print_pre_weights(Population const& pop, std::string filename) const
+	template<typename SYN, typename WT>
+	void SimulationQueue<SYN,WT>::print_pre_weights(Population const& pop, std::string filename) const
 	{
 		for (unsigned int i=0; i<pop.size(); ++i)
 		{
@@ -438,14 +465,15 @@ namespace xnet {
 			std::ofstream file(stst.str(),std::ios::out);
 			for (Id_t syn_id : get_pre_synapse_ranges(nrn))
 			{
-				Synapse const* syn = get_synapse_pointer(syn_id);
+				SYN const* syn = get_synapse_pointer(syn_id);
 				file << syn->get_weight().calc_current() << "\n";
 			}
 			file.close();
 		}
 	}
 
-	std::vector<Spike_t> Simulation::get_new_spikes()
+	template<typename SYN, typename WT>
+	std::vector<Spike_t> SimulationQueue<SYN,WT>::get_new_spikes()
 	{
 		if (last_spike_fetched < spike_list.size())
 		{
@@ -455,4 +483,7 @@ namespace xnet {
 		}
 		else return {};
 	}
+
+	template class SimulationQueue<RectSynapse,RectWeight>;
+	template class SimulationQueue<ExpSynapse,ExpWeight>;
 }

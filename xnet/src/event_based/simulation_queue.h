@@ -6,7 +6,8 @@
 #include "event_based/weight.h"
 #include "event_based/neuron.h"
 #include "event_based/neuron_params.h"
-#include "event_based/synapse.h"
+#include "event_based/rectsynapse.h"
+#include "event_based/expsynapse.h"
 #include "event_based/population.h"
 #include "event_based/synapse_range.h"
 #include "event_based/event.h"
@@ -16,10 +17,11 @@
 #include "event_based/silence_event.h"
 
 namespace xnet {
-	class Simulation
+	template<typename SYN, typename WT>
+	class SimulationQueue
 	{
 	public:
-		Simulation ();
+		SimulationQueue ();
 		void run(size_t num);
 		// population stuff
 		Population create_population_start(std::size_t size);
@@ -42,8 +44,8 @@ namespace xnet {
 			NormalRange_t td
 		);
 		// connection stuff
-		void connect_all_to_all_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
-		void connect_one_to_one_identical(Population const& p1, Population const& p2, Weight const& w, Timeconst_t ltp);
+		void connect_all_to_all_identical(Population const& p1, Population const& p2, WT const& w, Timeconst_t ltp);
+		void connect_one_to_one_identical(Population const& p1, Population const& p2, WT const& w, Timeconst_t ltp);
 		void connect_all_to_all_normal(
 			Population const& p1,
 			Population const& p2,
@@ -61,8 +63,8 @@ namespace xnet {
 		void run_one_event();
 		std::vector<SynapseRange> get_synapse_ranges(Id_t const& neuron) const;
 		std::vector<Id_t> get_pre_synapse_ranges(Id_t const& neuron) const;
-		Synapse* get_synapse_pointer(Id_t const& synapse);
-		Synapse const* get_synapse_pointer(Id_t const& synapse) const;
+		SYN* get_synapse_pointer(Id_t const& synapse);
+		SYN const* get_synapse_pointer(Id_t const& synapse) const;
 		Neuron* get_neuron_pointer(Id_t const& nrn);
 		Time_t get_time() const;
 		void add_spike(Time_t t, Id_t nrn);
@@ -73,14 +75,14 @@ namespace xnet {
 		void print_pre_weights(Id_t nrn, std::string filename) const;
 	protected:
 		void processEvent(event* ev);
-		void add_synapse(Id_t, Id_t, Weight, Timeconst_t);
+		void add_synapse(Id_t, Id_t, WT, Timeconst_t);
 		void flush_psp_cache();
 		void add_psp_cache(Id_t neuron, Current_t current);
 
 		std::default_random_engine generator;
 		unsigned int number_of_neurons;
 		std::vector<Neuron> neurons;
-		std::vector<Synapse> synapses;
+		std::vector<SYN> synapses;
 		std::map<Id_t,Current_t> psp_cache;
 		Time_t cache_valid_time;
 		bool cache_dirty;
@@ -92,4 +94,6 @@ namespace xnet {
 		std::vector<Spike_t> spike_list;
 		std::size_t last_spike_fetched;
 	};
+
+	typedef SimulationQueue<RectSynapse,RectWeight> Simulation;
 }

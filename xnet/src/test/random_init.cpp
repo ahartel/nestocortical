@@ -26,7 +26,7 @@ TEST(SIM,RANDOM_INIT)
 		{0.001,0.0002},
 		{0.0,0.0}
 	);
-	theSimulation.connect_all_to_all_identical(pop1,pop2,Weight(1.0,1.0,10.0,1.0,1.0),15.0);
+	theSimulation.connect_all_to_all_identical(pop1,pop2,RectWeight(1.0,1.0,10.0,1.0,1.0),15.0);
 
 	theSimulation.add_event(new pre_syn_event(0,0));
 	theSimulation.run_until_empty();

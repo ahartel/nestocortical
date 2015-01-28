@@ -8,9 +8,20 @@
 class PongPoisson : public Pong
 {
 public:
-	PongPoisson(int width, int height, pos2D v, float r, float pw);
-	PongPoisson(int width, int height, pos2D v, float r, float pw, std::string filename);
-	virtual std::vector<Spike_t> advance(Realtime_t t, int paddle_speed);
+	PongPoisson(
+		unsigned int width, unsigned int height,
+		pos2D v, float r, float pw,
+		xnet::Population& input,
+		xnet::Population& control
+	);
+	PongPoisson(
+		unsigned int width, unsigned int height,
+		pos2D v, float r, float pw,
+		std::string filename,
+		xnet::Population& input,
+		xnet::Population& control
+	);
+	virtual std::vector<Spike_t> advance(Realtime_t t, unsigned int target_pixel);
 private:
 	float on_rate, off_rate;
 

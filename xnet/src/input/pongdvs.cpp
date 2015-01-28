@@ -1,13 +1,24 @@
 #include "logger.h"
 #include "pongdvs.h"
 
-PongDVS::PongDVS(int width, int height, pos2D v, float r, float pw) :
-	Pong(width,height,v,r,pw)
+PongDVS::PongDVS(
+		int width, int height,
+		pos2D v, float r, float pw,
+		xnet::Population& input,
+		xnet::Population& control
+	) :
+	Pong(width,height,v,r,pw,input,control)
 {
 }
 
-PongDVS::PongDVS(int width, int height, pos2D v, float r, float pw, std::string filename) :
-	Pong(width,height,v,r,pw,filename)
+PongDVS::PongDVS(
+		int width, int height,
+		pos2D v, float r, float pw,
+		std::string filename,
+		xnet::Population& input,
+		xnet::Population& control
+	) :
+	Pong(width,height,v,r,pw,filename,input,control)
 {
 }
 

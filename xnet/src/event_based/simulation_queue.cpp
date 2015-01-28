@@ -20,22 +20,34 @@ namespace xnet {
 	template<typename SYN, typename WT>
 	void SimulationQueue<SYN,WT>::run_one_event()
 	{
-		//LOGGER("eventQueue size: " << eventQueue.size());
+		LOGGER("Popping next event");
 		event * nextEvent = eventQueue.top();
+		// if the top event is after the cache time
+		// then flush the cache first and pop again
+		if (cache_dirty &&
+			(nextEvent->time > cache_valid_time
+			 || nextEvent->get_type() != EventType::PRE))
+		{
+			flush_psp_cache();
+			nextEvent = eventQueue.top();
+		}
 		eventQueue.pop();
 		time = nextEvent->time;
-		//nextEvent->processEvent();
 		processEvent(nextEvent);
 		delete nextEvent;
-		//LOGGER("eventQueue size: " << eventQueue.size());
 	}
 
 	template<typename SYN, typename WT>
 	void SimulationQueue<SYN,WT>::run(size_t num) {
 		for (unsigned int i=0; i<num; ++i)
 		{
-			if (!eventQueue.empty())
+			if (!eventQueue.empty() || cache_dirty)
+			{
+				if (eventQueue.empty() && cache_dirty)
+					flush_psp_cache();
+
 				run_one_event();
+			}
 		}
 	}
 
@@ -43,15 +55,12 @@ namespace xnet {
 	void SimulationQueue<SYN,WT>::flush_psp_cache()
 	{
 		LOGGER("Flushing psp cache");
-		if (cache_dirty)
+		for (std::map<Id_t,Current_t>::iterator it=psp_cache.begin(); it!=psp_cache.end(); ++it)
 		{
-			for (std::map<Id_t,Current_t>::iterator it=psp_cache.begin(); it!=psp_cache.end(); ++it)
-			{
-				add_event(new psp_event(cache_valid_time,it->first,it->second));
-			}
-			psp_cache.clear();
-			cache_dirty = false;
+			add_event(new psp_event(cache_valid_time,it->first,it->second));
 		}
+		psp_cache.clear();
+		cache_dirty = false;
 	}
 
 	template<typename SYN, typename WT>
@@ -69,9 +78,6 @@ namespace xnet {
 		Id_t linked_object = ev->get_linked_object_id();
 		if (type == EventType::PRE)
 		{
-			if (time > cache_valid_time)
-				flush_psp_cache();
-
 			// add this spike to the global spike list
 			add_spike(time,linked_object);
 			// check if there are post-synaptic neurons to this neuron
@@ -79,7 +85,9 @@ namespace xnet {
 			{
 				if (synrange.non_empty())
 				{
-					LOGGER("@" << time << " Processing pre_syn_event for neuron " << linked_object << " and synrange from "<< synrange.begin() << " to " << synrange.end());
+					LOGGER("@" << time << " Processing pre_syn_event for neuron "
+						   << linked_object << " and synrange from "
+						   << synrange.begin() << " to " << synrange.end());
 					for (std::size_t i=synrange.begin(); i<=synrange.end(); ++i)
 					{
 						SYN* syn = get_synapse_pointer(i);
@@ -88,7 +96,7 @@ namespace xnet {
 						else
 						{
 							Current_t current = syn->eval_pre_event(time);
-							LOGGER("Current: " << current);
+							LOGGER("Synapse: " << i << ", Current: " << current);
 							add_psp_cache(syn->get_post_neuron(),current);
 						}
 					}
@@ -99,7 +107,6 @@ namespace xnet {
 		}
 		else if (type == EventType::PSP)
 		{
-			flush_psp_cache();
 
 			psp_event* psp_evt = static_cast<psp_event*>(ev);
 
@@ -115,7 +122,6 @@ namespace xnet {
 		}
 		else if (type == EventType::PST)
 		{
-			flush_psp_cache();
 
 			for (Id_t syn_id : get_pre_synapse_ranges(linked_object))
 			{
@@ -129,7 +135,6 @@ namespace xnet {
 		}
 		else if (type == EventType::SIL)
 		{
-			flush_psp_cache();
 
 			LOGGER("@" << time << " Processing silence event for post-synaptic neuron " << linked_object);
 			Neuron* neuron = get_neuron_pointer(linked_object);
@@ -240,7 +245,7 @@ namespace xnet {
 									tau_mem(generator),
 									tau_ref(generator),
 									Tinhibit(generator),
-									Tdelay(generator)
+									fabs(Tdelay(generator))
 								});
 		}
 #pragma GCC diagnostic pop
@@ -370,13 +375,17 @@ namespace xnet {
 	void SimulationQueue<SYN,WT>::add_event(event * e)
 	{
 		eventQueue.push(e);
-		LOGGER("Adding event of type " << e->get_type() << " for time " << e->time << " object " << e->get_linked_object_id());
+		LOGGER("@" << e->time <<" Adding event of type " << e->get_type() << " for object " << e->get_linked_object_id());
 	}
 
 	template<typename SYN, typename WT>
 	void SimulationQueue<SYN,WT>::run_until_empty()
 	{
-		while (!eventQueue.empty()) {
+		while (!eventQueue.empty() || cache_dirty)
+		{
+			if (eventQueue.empty() && cache_dirty)
+				flush_psp_cache();
+
 			run_one_event();
 		}
 	}

@@ -16,8 +16,6 @@ TEST(INPUT,BALL_TRAJECTORY)
 {
 	int image_width = 16;
 	int image_height = 16;
-	int num_neurons = 48;
-	int num_dvs_addresses = 2 * image_width * image_height;
 	float dt = 1.0;
 	int	num_repetitions = 2;
 	float velocity = 0.48;

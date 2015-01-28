@@ -6,7 +6,7 @@ def options(opt):
 def configure(conf):
     conf.load('g++')
 
-    conf.env.CXXFLAGS_XNET = ['-std=c++11','-g']
+    conf.env.CXXFLAGS_XNET = ['-std=c++11','-g','-Wall']
     if not conf.options.nolog:
         conf.env.CXXFLAGS_XNET.append('-DCOUT_ENABLED')
 
@@ -26,7 +26,7 @@ def build(bld):
             'src/input/pongpoisson.cpp',
             'src/input/pong.cpp',
         ],
-        use = 'XNET',
+        use = ['XNET','xnetevent'],
         target = 'xnet_input',
         install_path = 'lib',
     )
@@ -73,28 +73,28 @@ def build(bld):
             'src/event_based/rectweight.cpp',
             'src/event_based/expweight.cpp',
         ],
-        use = ['XNET','xnet_input'],
+        use = ['XNET'],
         target = 'xnetevent',
         install_path = 'lib',
     )
 
     bld.program (
         source = ['src/experiments/xnet_balls_rect.cpp'],
-        use = ['xnet','xnetevent'],
+        use = ['xnet','xnetevent','xnet_input'],
         target = 'xnet_balls_rect',
         install_path = 'bin',
     )
 
     bld.program (
         source = ['src/experiments/xnet_pong_poisson_exp.cpp'],
-        use = ['xnet','xnetevent'],
+        use = ['xnet','xnetevent','xnet_input'],
         target = 'xnet_pong_poisson_exp',
         install_path = 'bin',
     )
 
     bld.program (
         source = ['src/experiments/xnet_pong_poisson_rect.cpp'],
-        use = ['xnet','xnetevent'],
+        use = ['xnet','xnetevent','xnet_input'],
         target = 'xnet_pong_poisson_rect',
         install_path = 'bin',
     )

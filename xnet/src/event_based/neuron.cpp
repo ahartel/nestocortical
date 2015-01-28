@@ -10,8 +10,8 @@ namespace xnet
 		last_spike_time(0),
 		last_update_time(0),
 		last_inhibit_time(0),
-		inhibited(false),
-		refractory(false)
+		refractory(false),
+		inhibited(false)
 	{
 	}
 

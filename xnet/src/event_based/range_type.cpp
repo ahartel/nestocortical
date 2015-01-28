@@ -46,7 +46,7 @@ namespace xnet
 
 		if (_size < 0)
 			throw std::out_of_range("Start or End in RangeType not fully defined.");
-		if (_start + pos > _end)
+		if (_start + int(pos) > _end)
 			throw std::out_of_range("RangeType range exceeded");
 
 		return _start + pos;

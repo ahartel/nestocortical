@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-binning = 0.01
+binning = 0.05
 
 data = np.loadtxt(sys.argv[1],delimiter=',',ndmin=2)
 

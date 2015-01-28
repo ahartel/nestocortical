@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 		num_intermediate_neurons,
 		{5000.0,100.0,100,500} // neuron parameters
 	);
-	auto output = theSimulation.create_population_fixed(num_output_neurons,{2000.0,100.0,100,500});
+	auto output = theSimulation.create_population_fixed(num_output_neurons,{2000.0,100.0,40,500});
 
 	theSimulation.connect_all_to_all_normal(input,intermediate,
 											{1.0,0.2}, //wmin
@@ -69,11 +69,11 @@ int main(int argc, char* argv[])
 	//									);
 	theSimulation.connect_all_to_all_normal(intermediate,output,
 											{1.0,0.2}, //wmin
-											{3000.0,600.0}, //wmax
+											{4000.0,800.0}, //wmax
 											{1000.0,200.0}, // winit
 											{200.0,40.0}, // ap
 											{100.0,20.0}, // am
-											{100.0,10.0} // ltp
+											{1000.0,200.0} // ltp
 										);
 
 	theSimulation.connect_one_to_one_identical(control, output,

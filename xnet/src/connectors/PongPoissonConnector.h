@@ -63,6 +63,8 @@ void runPongPoissonConnector (SIM& theSimulation, PongPoisson& pong, xnet::Popul
 				Id_t nrn = std::get<1>(spike);
 				Time_t target_time = time + theSimulation.get_neuron_pointer(nrn)->get_delay();
 				theSimulation.add_event(new xnet::pre_syn_event(target_time,nrn));
+				theSimulation.add_event(new xnet::pre_syn_event(target_time+50,nrn));
+				theSimulation.add_event(new xnet::pre_syn_event(target_time+100,nrn));
 			}
 
 			time += dt;

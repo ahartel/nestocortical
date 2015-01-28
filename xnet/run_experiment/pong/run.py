@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 
 image_width = 16
 image_height = 16
-num_repetitions = 2000
-neurons = range(272,304)
+num_repetitions = 10000
+intermediate_neurons = range(272,304)
+output_neurons = range(304,320)
 
 color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
     '#666666','#777777','#888888','#999999','#aaaaaa',
@@ -24,7 +25,7 @@ print "Simulation done."
 
 if 1:
     plt.figure()
-    for neuron in neurons:
+    for neuron in intermediate_neurons:
         # load weights
         initial = np.loadtxt('./results/xnet_pong_weights_initial_'+str(neuron))
         final   = np.loadtxt('./results/xnet_pong_weights_final_'+str(neuron))
@@ -39,7 +40,29 @@ if 1:
                     weight_diff.append([])
                     weight_diff[y].append(diff)
 
-        plt.subplot(4,8,neuron-neurons[0]+1)
+        plt.subplot(4,8,neuron-intermediate_neurons[0]+1)
+        plt.title(neuron)
+        imgplot = plt.imshow(weight_diff, interpolation='none',origin='lower')
+        imgplot.set_cmap('binary')
+        plt.colorbar()
+
+    plt.figure()
+    for neuron in output_neurons:
+        # load weights
+        initial = np.loadtxt('./results/xnet_pong_weights_initial_'+str(neuron))
+        final   = np.loadtxt('./results/xnet_pong_weights_final_'+str(neuron))
+
+        weight_diff = []
+        for x in range(0,4):
+            for y in range(0,8):
+                diff = final[x*8+y]-initial[x*8+y]
+                try:
+                    weight_diff[x].append(diff)
+                except IndexError:
+                    weight_diff.append([])
+                    weight_diff[x].append(diff)
+
+        plt.subplot(4,4,neuron-output_neurons[0]+1)
         plt.title(neuron)
         imgplot = plt.imshow(weight_diff, interpolation='none',origin='lower')
         imgplot.set_cmap('binary')

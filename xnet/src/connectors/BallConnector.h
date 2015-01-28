@@ -1,6 +1,7 @@
 #pragma once
 
 template<typename SIM>
+inline
 void runBallConnector(SIM& theSimulation, BallCamera& cam, DVS& dvs, std::string filename_base, int num_repetitions)
 {
 	Time_t time = 0;

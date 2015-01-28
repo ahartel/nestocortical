@@ -17,6 +17,7 @@ size_t max(std::vector<T> const& input)
 }
 
 template<typename SIM>
+inline
 void runPongPoissonConnector (SIM& theSimulation, PongPoisson& pong, xnet::Population const& output, std::string filename_base, int num_repetitions)
 {
 	float timebase = 1.0e-4;
@@ -27,26 +28,23 @@ void runPongPoissonConnector (SIM& theSimulation, PongPoisson& pong, xnet::Popul
 	// one repetition consists of letting the ball bounce back and forth once
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
+		LOGGER("Repetition " << rep);
 		// this is how long it takes to bounce the ball back and forth once
-		for (Time_t t=0; t<pong.get_court_width()/std::get<0>(pong.get_velocity())*2*10000; t+=dt)
+		for (Time_t t=0; t<pong.get_court_width()/fabs(std::get<0>(pong.get_velocity()))*2*10000; t+=dt)
 		{
-			LOGGER("Processing output spikes");
 			auto output_spikes = theSimulation.get_new_spikes();
 			std::vector<int> guess(pong.get_court_height());
 			// collect the spikes of the output neurons and count them
 			for (auto spike : output_spikes)
 			{
-				LOGGER(std::get<1>(spike));
 				for (unsigned int n=0; n<output.size();++n)
 				{
-					LOGGER(output.get(n)<<" "<<n);
 					if (std::get<1>(spike) == output.get(n))
 					{
 						guess[n] += 1;
 					}
 				}
 			}
-			LOGGER("Processing input spikes");
 			if (std::any_of(guess.begin(), guess.end(), [](int i){return i>0;}))
 			{
 				new_guess = max(guess);
@@ -58,11 +56,13 @@ void runPongPoissonConnector (SIM& theSimulation, PongPoisson& pong, xnet::Popul
 			}
 			// advance the pong simulation by 1 ms
 			auto input_spikes = pong.advance(0.001,new_guess);
+			LOGGER("Processing input spikes, size: "<<input_spikes.size());
 			// present the newly generated input data to the network
 			for (auto spike : input_spikes)
 			{
-				LOGGER(std::get<1>(spike));
-				theSimulation.add_event(new xnet::pre_syn_event(time,std::get<1>(spike)));
+				Id_t nrn = std::get<1>(spike);
+				Time_t target_time = time + theSimulation.get_neuron_pointer(nrn)->get_delay();
+				theSimulation.add_event(new xnet::pre_syn_event(target_time,nrn));
 			}
 
 			time += dt;

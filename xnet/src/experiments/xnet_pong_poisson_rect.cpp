@@ -19,25 +19,19 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-	int court_width = 16;
-	int court_height = 16;
+	if (argc != 3)
+		throw std::invalid_argument("Please give number of repetitions and filename base path as arguments");
+
+	unsigned int court_width = 16;
+	unsigned int court_height = 16;
 	int num_output_neurons = 16;
-	int num_intermediate_neurons = 16;
-	int num_dvs_addresses = court_height + court_width;
+	//int num_intermediate_neurons = 16;
+	int num_dvs_addresses = court_height*court_width;
 	int	num_repetitions = atoi(argv[1]);
 	std::string filename_base(argv[2]);
 	pos2D velocity = std::make_tuple(50.0,55.0); // pixels per second
 	float ball_radius = 1.0;
 	float paddle_width = 1.0;
-	float paddle_speed = 1.0;
-
-	//PongDVS pong {
-	PongPoisson pong {
-		court_width, court_height,
-		velocity,
-		ball_radius, paddle_width,
-		filename_base+"/pong_record"
-	};
 
 	xnet::SimulationQueue<xnet::RectSynapse,xnet::RectWeight> theSimulation;
 
@@ -61,8 +55,8 @@ int main(int argc, char* argv[])
 											{1.0,0.2}, //wmin
 											{3000.0,600.0}, //wmax
 											{300.0,60.0}, // winit
-											{150.0,30.0}, // ap
-											{150.0,30.0}, // am
+											{100.0,20.0}, // ap
+											{50.0,10.0}, // am
 											{100.0,20.0} // ltp
 										);
 	//theSimulation.connect_all_to_all_normal(input,intermediate,
@@ -89,6 +83,16 @@ int main(int argc, char* argv[])
 	theSimulation.connect_all_to_all_wta(output);
 
 	theSimulation.print_pre_weights(output,filename_base+"/xnet_pong_weights_initial_");
+
+	//PongDVS pong {
+	PongPoisson pong {
+		court_width, court_height,
+		velocity,
+		ball_radius, paddle_width,
+		filename_base+"/pong_record",
+		input,
+		control
+	};
 
 	runPongPoissonConnector(theSimulation,pong,output,filename_base,num_repetitions);
 

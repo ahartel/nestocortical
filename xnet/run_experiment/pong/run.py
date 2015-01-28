@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 image_width = 16
 image_height = 16
 num_repetitions = 5000
-neurons = range(48,64)
+neurons = range(272,288)
 
 color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
     '#666666','#777777','#888888','#999999','#aaaaaa',
@@ -19,7 +19,7 @@ color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
 if not os.path.exists('results'):
     os.makedirs('results')
 
-os.system('../../bin/xnet_pong_class '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+os.system('../../bin/xnet_pong_poisson_rect '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 print "Simulation done."
 
 if 1:
@@ -30,21 +30,19 @@ if 1:
         final   = np.loadtxt('./results/xnet_pong_weights_final_'+str(neuron))
 
         weight_diff = []
-        for x in range(0,image_width):
-            diff = final[x]#-initial[x]
-            try:
-                weight_diff[x].append(diff)
-            except IndexError:
-                weight_diff.append([])
-                weight_diff[x].append(diff)
-
         for y in range(0,image_height):
-            diff = final[image_width+y]#-initial[image_width+y]
-            weight_diff[y].append(diff)
+            for x in range(0,image_width):
+                diff = final[x*image_width+y]-initial[x*image_width+y]
+                try:
+                    weight_diff[y].append(diff)
+                except IndexError:
+                    weight_diff.append([])
+                    weight_diff[y].append(diff)
 
-        plt.subplot(4,4,neuron-47)
+        plt.subplot(4,4,neuron-neurons[0]+1)
         plt.title(neuron)
-        plt.imshow(weight_diff, interpolation='none')
+        imgplot = plt.imshow(weight_diff, interpolation='none',origin='lower')
+        imgplot.set_cmap('binary')
         plt.colorbar()
 
 plt.figure()
@@ -65,7 +63,7 @@ for t,x,y,p in game_record:
             hits += 1
         counter += 1
         if counter==10:
-            plt.plot(t,float(hits)/(t-last_time),'o')
+            plt.plot(t,float(hits)/(t-last_time),'o',color='blue')
             last_time = t
             counter = 0
             hits = 0

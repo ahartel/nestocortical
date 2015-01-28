@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 image_width = 16
 image_height = 16
-num_repetitions = 5000
-neurons = range(272,288)
+num_repetitions = 2000
+neurons = range(272,304)
 
 color_lookup = [ '#111111','#222222','#333333','#444444','#555555',
     '#666666','#777777','#888888','#999999','#aaaaaa',
@@ -39,7 +39,7 @@ if 1:
                     weight_diff.append([])
                     weight_diff[y].append(diff)
 
-        plt.subplot(4,4,neuron-neurons[0]+1)
+        plt.subplot(4,8,neuron-neurons[0]+1)
         plt.title(neuron)
         imgplot = plt.imshow(weight_diff, interpolation='none',origin='lower')
         imgplot.set_cmap('binary')

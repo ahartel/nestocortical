@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 	unsigned int court_width = 16;
 	unsigned int court_height = 16;
 	int num_output_neurons = 16;
-	//int num_intermediate_neurons = 16;
+	int num_intermediate_neurons = 32;
 	int num_dvs_addresses = court_height*court_width;
 	int	num_repetitions = atoi(argv[1]);
 	std::string filename_base(argv[2]);
@@ -42,22 +42,22 @@ int main(int argc, char* argv[])
 		{50.0,0.0},
 		{100,0},
 		{15,0},
-		{500.0,100.0} // delay
+		{0.0,0.0} // delay
 	);
 	auto control = theSimulation.create_population_fixed(court_height,{1000.0,50.,100,15});
-	//auto intermediate = theSimulation.create_population_fixed(
-	//	num_intermediate_neurons,
-	//	{3000.0,100.0,10,50} // neuron parameters
-	//);
-	auto output = theSimulation.create_population_fixed(num_output_neurons,{6000.0,100.0,50,200});
+	auto intermediate = theSimulation.create_population_fixed(
+		num_intermediate_neurons,
+		{5000.0,100.0,100,500} // neuron parameters
+	);
+	auto output = theSimulation.create_population_fixed(num_output_neurons,{2000.0,100.0,100,500});
 
-	theSimulation.connect_all_to_all_normal(input,output,
+	theSimulation.connect_all_to_all_normal(input,intermediate,
 											{1.0,0.2}, //wmin
-											{3000.0,600.0}, //wmax
-											{300.0,60.0}, // winit
+											{2000.0,400.0}, //wmax
+											{500.0,100.0}, // winit
 											{100.0,20.0}, // ap
 											{50.0,10.0}, // am
-											{100.0,20.0} // ltp
+											{400.0,80.0} // ltp
 										);
 	//theSimulation.connect_all_to_all_normal(input,intermediate,
 	//										{1.0,0.2}, //wmin
@@ -67,21 +67,22 @@ int main(int argc, char* argv[])
 	//										{50.0,10.0}, // am
 	//										{50.0,0.0} // ltp
 	//									);
-	//theSimulation.connect_all_to_all_normal(intermediate,output,
-	//										{1.0,0.2}, //wmin
-	//										{1000.0,300.0}, //wmax
-	//										{200.0,40.0}, // winit
-	//										{100.0,20.0}, // ap
-	//										{50.0,10.0}, // am
-	//										{100.0,10.0} // ltp
-	//									);
+	theSimulation.connect_all_to_all_normal(intermediate,output,
+											{1.0,0.2}, //wmin
+											{3000.0,600.0}, //wmax
+											{1000.0,200.0}, // winit
+											{200.0,40.0}, // ap
+											{100.0,20.0}, // am
+											{100.0,10.0} // ltp
+										);
 
 	theSimulation.connect_one_to_one_identical(control, output,
-		xnet::RectWeight(6000.0,0.0,11000.0,0.0,0.0),15.0);
+		xnet::RectWeight(2000.0,0.0,11000.0,0.0,0.0),15.0);
 
-	//theSimulation.connect_all_to_all_wta(intermediate);
+	theSimulation.connect_all_to_all_wta(intermediate);
 	theSimulation.connect_all_to_all_wta(output);
 
+	theSimulation.print_pre_weights(intermediate,filename_base+"/xnet_pong_weights_initial_");
 	theSimulation.print_pre_weights(output,filename_base+"/xnet_pong_weights_initial_");
 
 	//PongDVS pong {
@@ -96,6 +97,7 @@ int main(int argc, char* argv[])
 
 	runPongPoissonConnector(theSimulation,pong,output,filename_base,num_repetitions);
 
+	theSimulation.print_pre_weights(intermediate,filename_base+"/xnet_pong_weights_final_");
 	theSimulation.print_pre_weights(output,filename_base+"/xnet_pong_weights_final_");
 
 }

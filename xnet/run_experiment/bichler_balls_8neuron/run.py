@@ -8,8 +8,8 @@ import neuroplotlib as nplt
 
 image_width = 16
 image_height = 16
-num_repetitions = 8800
-neurons = range(512,560)
+num_repetitions = 8000
+neurons = range(512,520)
 
 #print plt.style.available
 #plt.style.context('fivethirtyeight')
@@ -17,13 +17,14 @@ neurons = range(512,560)
 if not os.path.exists('results'):
     os.makedirs('results')
 
-os.system('../../bin/xnet_balls_rect '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+os.system('../../bin/bichler_balls_rect_8output '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+print "Simulation done."
 
-if 0:
+if 1:
     plt.figure()
     for neuron in neurons:
-        initial = np.loadtxt('./results/xnet_balls_weights_initial_'+str(neuron))
-        final   = np.loadtxt('./results/xnet_balls_weights_final_'+str(neuron))
+        initial = np.loadtxt('./results/bichler_balls_8neurons_weights_initial_'+str(neuron))
+        final   = np.loadtxt('./results/bichler_balls_8neurons_weights_final_'+str(neuron))
 
         weight_diff = []
         for px in range(0,image_height*image_width):
@@ -42,19 +43,19 @@ if 0:
                 weight_diff.append([])
                 weight_diff[px/image_width].append(result)
 
-        plt.subplot(6,8,neuron-neurons[0]+1)
+        plt.subplot(2,4,neuron-neurons[0]+1)
         plt.title(neuron)
         plt.imshow(weight_diff)
         plt.colorbar()
 
 # load order
-stimuli = np.loadtxt('./results/xnet_balls_order',delimiter=',')
+stimuli = np.loadtxt('./results/bichler_balls_8neurons_order',delimiter=',')
 # load spikes
-data = np.loadtxt('./results/xnet_balls_spikes.dat', delimiter=',')
+data = np.loadtxt('./results/bichler_balls_8neurons_spikes.dat', delimiter=',')
 
 if 1:
     # generate Peri-Stimulus Time Histogram
-    psth = nplt.psth.psth(stimuli, data, neurons, 10)
+    psth = psth(stimuli, data, neurons, 10)
 
     #import pprint
     #pp = pprint.PrettyPrinter()
@@ -71,14 +72,13 @@ if 1:
     x = 0
     y = 0
     for stimulus,groups in psth.iteritems():
-        for group in [groups[0],groups[5],groups[-2]]:
+        for group in [groups[0],groups[5],groups[-1]]:
             ax = axes[y][x]
-            ax.set_ylim(neurons[0],neurons[-1])
             for nrn, times in group.iteritems():
                 mean = np.mean(times)
                 std = np.std(times)
                 num = len(times)
-                ax.errorbar(mean,nrn,xerr=std,marker='o',color=str(1.0-float(num)/15.0))
+                ax.errorbar(mean,nrn,xerr=std,marker='o',color=str(float(num)/20.0))
                 ax.annotate(str(num),xy=(mean,nrn))
 
             x += 1
@@ -86,15 +86,7 @@ if 1:
         x = 0
 
 plt.figure()
-nplt.spikes.plot_spikes(data)
-
-ranges = []
-for st in stimuli[stimuli[:,0]==90.0]:
-    ranges.append((float(st[1]),float(st[1]+0.2)))
-
-plt.figure()
-nplt.spikes.plot_spikes_ranges(data,ranges)
-
+nplt.plot_spikes(data)
 
 # show figures
 plt.show()

@@ -12,12 +12,12 @@ void runBallConnector(SIM& theSimulation, BallCamera& cam, DVS& dvs, std::string
 	int angles[8] = {0,45,90,135,180,225,270,315};
 	std::uniform_int_distribution<int> angle_dist(0,7);
 
-	std::ofstream file(filename_base+"/xnet_balls_order",std::ios::out);
+	std::ofstream file(filename_base+"_order",std::ios::out);
 	file.close();
 	for (int rep=0; rep<num_repetitions; ++rep)
 	{
 		int angle = angles[angle_dist(generator)];
-		file.open(filename_base+"/xnet_balls_order",std::ios::app);
+		file.open(filename_base+"_order",std::ios::app);
 		file << angle << "," << float(time)*timebase << "\n";
 		file.close();
 
@@ -42,5 +42,5 @@ void runBallConnector(SIM& theSimulation, BallCamera& cam, DVS& dvs, std::string
 	//theSimulation.run(10000);
 	theSimulation.run_until_empty();
 
-	theSimulation.print_spikes(filename_base+"/xnet_balls_spikes.dat",timebase);
+	theSimulation.print_spikes(filename_base+"_spikes.dat",timebase);
 }

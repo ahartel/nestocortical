@@ -1,3 +1,4 @@
+import os, glob
 
 def options(opt):
     opt.load('g++')
@@ -41,19 +42,14 @@ def build(bld):
         install_path = 'lib',
     )
 
-    bld.program (
-        source = ['src/experiments/xnet_old_balls.cpp'],
-        use = ['XNET', 'xnet_old'],
-        target = 'xnet_old_balls',
-        install_path = 'bin',
-    )
-
-    bld.program (
-        source = ['src/experiments/xnet_old_traffic.cpp'],
-        use = ['XNET', 'xnet_old'],
-        target = 'xnet_old_traffic',
-        install_path = 'bin',
-    )
+    for old_exp in glob.glob('src/experiments/old/*.cpp'):
+        print old_exp
+        bld.program (
+            source = [old_exp],
+            use = ['XNET', 'xnet_old'],
+            target = os.path.splitext(old_exp)[0],
+            install_path = 'bin',
+        )
 
     bld.shlib(
         source = [
@@ -78,25 +74,13 @@ def build(bld):
         install_path = 'lib',
     )
 
-    bld.program (
-        source = ['src/experiments/xnet_balls_rect.cpp'],
-        use = ['xnet','xnetevent','xnet_input'],
-        target = 'xnet_balls_rect',
-        install_path = 'bin',
-    )
+    for file_in_dir in glob.glob('src/experiments/*.cpp'):
+        bld.program (
+            source = [file_in_dir],
+            use = ['xnet','xnetevent','xnet_input'],
+            target = os.path.splitext(file_in_dir)[0],
+            install_path = 'bin',
+        )
 
-    bld.program (
-        source = ['src/experiments/xnet_pong_poisson_exp.cpp'],
-        use = ['xnet','xnetevent','xnet_input'],
-        target = 'xnet_pong_poisson_exp',
-        install_path = 'bin',
-    )
-
-    bld.program (
-        source = ['src/experiments/xnet_pong_poisson_rect.cpp'],
-        use = ['xnet','xnetevent','xnet_input'],
-        target = 'xnet_pong_poisson_rect',
-        install_path = 'bin',
-    )
 
 

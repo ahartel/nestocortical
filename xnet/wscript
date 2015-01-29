@@ -43,7 +43,6 @@ def build(bld):
     )
 
     for old_exp in glob.glob('src/experiments/old/*.cpp'):
-        print old_exp
         bld.program (
             source = [old_exp],
             use = ['XNET', 'xnet_old'],

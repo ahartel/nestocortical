@@ -1,5 +1,6 @@
 #!/bin/python
 import os, sys
+sys.path.append('../../python')
 import numpy as np
 from sets import Set
 import matplotlib.pyplot as plt

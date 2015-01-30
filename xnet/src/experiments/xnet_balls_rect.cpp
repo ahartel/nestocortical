@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
 
 	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_initial_");
 
-	runBallConnector(theSimulation,cam,dvs,filename_base,num_repetitions);
+	runBallConnector(theSimulation,cam,dvs,filename_base+"/xnet_balls",num_repetitions);
 
 	theSimulation.print_pre_weights(pop2,filename_base+"/xnet_balls_weights_final_");
 

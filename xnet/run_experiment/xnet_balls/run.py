@@ -18,6 +18,7 @@ if not os.path.exists('results'):
     os.makedirs('results')
 
 #os.system('../../bin/xnet_balls_rect 0 '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+print "Simulation done."
 
 if 0:
     plt.figure()

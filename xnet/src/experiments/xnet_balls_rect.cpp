@@ -23,8 +23,9 @@ int main(int argc, char* argv[])
 	int image_height = 16;
 	int num_neurons = 48;
 	int num_dvs_addresses = 2 * image_width * image_height;
-	int	num_repetitions = atoi(argv[1]);
-	std::string filename_base(argv[2]);
+	float mean_delay = atof(argv[1]);
+	int	num_repetitions = atoi(argv[2]);
+	std::string filename_base(argv[3]);
 	float velocity = 480.0;
 	float ball_radius = 6.0;
 
@@ -40,7 +41,14 @@ int main(int argc, char* argv[])
 	xnet::Simulation theSimulation;
 
 	auto pop1 = theSimulation.create_population_fixed(num_dvs_addresses,{1000.0,50.0,100,15});
-	auto pop2 = theSimulation.create_population_fixed(num_neurons,{10000.0,50.0,100,15});
+	auto pop2 = theSimulation.create_population_normal(
+		num_neurons,
+		{10000.0,0.0}, // threshold
+		{50.0,0.0},    // membrane timeconstant
+		{100,0},       // refractory time
+		{15,0},        // inhibitory time
+		{mean_delay,mean_delay/5} // delays
+	);
 
 
 	theSimulation.connect_all_to_all_normal(pop1,pop2,

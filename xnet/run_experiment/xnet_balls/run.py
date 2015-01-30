@@ -8,7 +8,7 @@ import neuroplotlib as nplt
 
 image_width = 16
 image_height = 16
-num_repetitions = 8800
+num_repetitions = 12000
 neurons = range(512,560)
 
 #print plt.style.available
@@ -17,7 +17,7 @@ neurons = range(512,560)
 if not os.path.exists('results'):
     os.makedirs('results')
 
-os.system('../../bin/xnet_balls_rect '+str(num_repetitions)+' '+os.getcwd()+'/results/')
+#os.system('../../bin/xnet_balls_rect 0 '+str(num_repetitions)+' '+os.getcwd()+'/results/')
 
 if 0:
     plt.figure()
@@ -60,7 +60,7 @@ if 1:
     #pp = pprint.PrettyPrinter()
     #pp.pprint(psth[0.0])
 
-    fig, axes = plt.subplots(nrows=len(psth), ncols=3)
+    fig, axes = plt.subplots(nrows=len(psth), ncols=5)
 
     for ax, col in zip(axes[0], range(len(psth.itervalues().next()))):
         ax.set_title(col)
@@ -71,9 +71,12 @@ if 1:
     x = 0
     y = 0
     for stimulus,groups in psth.iteritems():
-        for group in [groups[0],groups[5],groups[-2]]:
+        # plot some groups
+        for group in [groups[0],groups[1],groups[2],groups[3],groups[-2]]:
             ax = axes[y][x]
             ax.set_ylim(neurons[0],neurons[-1])
+            ax.set_xlim(0,0.1)
+            ax.grid()
             for nrn, times in group.iteritems():
                 mean = np.mean(times)
                 std = np.std(times)
@@ -86,14 +89,42 @@ if 1:
         x = 0
 
 plt.figure()
+stim_count = 0
+for stimulus,groups in psth.iteritems():
+    plt.subplot(len(psth),1,stim_count)
+    # calculate specialization value
+    metrics = []
+    #if stim_count == 0:
+    #    print stimulus," ",len(groups)
+    for group in groups:
+        #if stim_count == 0:
+        #    print "==group=="
+        metric = 0
+        for nrn,times in group.iteritems():
+            std = np.std(times)
+            num = float(len(times))
+            #if stim_count == 0:
+            #    print " ",nrn," ",num," ",std
+            metric += num/(std+0.001)
+
+        metric /= len(group)
+        metrics.append(metric)
+
+    plt.plot(metrics)
+    plt.grid()
+    plt.ylabel(stimulus)
+
+    stim_count += 1
+
+plt.figure()
 nplt.spikes.plot_spikes(data)
 
 ranges = []
 for st in stimuli[stimuli[:,0]==90.0]:
     ranges.append((float(st[1]),float(st[1]+0.2)))
 
-plt.figure()
-nplt.spikes.plot_spikes_ranges(data,ranges)
+#plt.figure()
+#nplt.spikes.plot_spikes_ranges(data,ranges)
 
 
 # show figures

@@ -1,18 +1,21 @@
-import matplotlib as mpl
-mpl.use('Agg')
+SAVEFIG=True
+if SAVEFIG:
+    import matplotlib as mpl
+    mpl.use('Agg')
 import nest
 import nest.voltage_trace
 import nest.raster_plot
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import bisect
+
+nest.Install("mymodule")
 
 t_sim = 1000.0  # how long we simulate
 n_ex = 16000     # size of the excitatory population
 n_in = 4000      # size of the inhibitory population
-r_expect = 30.0       # mean rate of the ex5itatory population
+r_expect = 40.0       # mean rate of the ex5itatory population
 r_inp = 40.0      # initial rate of the inhibitory population
-epsc = 30.0      # peak amplitude of excitatory synaptic currents
+epsc = 20.0      # peak amplitude of excitatory synaptic currents
 ipsc = -45.0     # peak amplitude of inhibitory synaptic currents
 d = 1.0          # synaptic delay
 lower = 15.0     # lower bound of the search interval
@@ -35,13 +38,13 @@ ndict = {
         }
 
 def get_weights(pop):
-    conns = nest.GetConnections(pop, synapse_model="stdp_synapse")
-    conn_vals = nest.GetStatus(conns, ["weight"])
+    conns = nest.GetConnections(pop, synapse_model="rstdp_synapse")
+    conn_vals = nest.GetStatus(conns, ["accumulation"])
     conn_vals = np.array(conn_vals)
     return conn_vals
 
 def set_weights(pop,weights):
-    conns = nest.GetConnections(pop, synapse_model="stdp_synapse")
+    conns = nest.GetConnections(pop, synapse_model="rstdp_synapse")
     for conn,wgt in zip(conns,weights):
         nest.SetStatus([conn], {"weight": wgt[0]} )
     # check if it worked
@@ -138,20 +141,20 @@ def set_up_network():
 
     # Connect the parrots to the neurons under test
     conn_dict = {"rule": "all_to_all"}
-    syn_dict = {"model": "stdp_synapse",
+    syn_dict = {"model": "rstdp_synapse",
                 "mu_plus":0.0,
                 "mu_minus":0.0,
                 "alpha": 1.0,
-                "lambda": 0.001,
+                "lambda": 0.0001,
                 "weight": epsc}
     nest.Connect(inputs, neuronpop, conn_dict, syn_dict)
 
     # Apply some non-changing background
-    # bg_syn_dict = {"model": "static_synapse",
-                   # "weight": epsc}
-    # background = nest.Create("poisson_generator",2)
-    # nest.SetStatus(background, {"rate": 15*r_inp})
-    # nest.Connect(background,neuronpop,conn_dict,bg_syn_dict)
+    bg_syn_dict = {"model": "static_synapse",
+                   "weight": epsc}
+    background = nest.Create("poisson_generator",1)
+    nest.SetStatus(background, {"rate": 10*r_inp})
+    nest.Connect(background,neuronpop,conn_dict,bg_syn_dict)
 
     voltmeter = nest.Create("voltmeter",NUM_NEURONS)
     spikedetector = nest.Create("spike_detector")
@@ -175,7 +178,8 @@ if __name__ == '__main__':
 
         if PLOT_WEIGHTS:
             f = plot_weights(weights_before)
-            f.savefig('plots/'+run_str+'_before_weights.png')
+            if SAVEFIG:
+                f.savefig('plots/'+run_str+'_before_weights.png')
 
         nest.Simulate(t_sim)
 
@@ -195,15 +199,21 @@ if __name__ == '__main__':
 
         if PLOT_WEIGHTS:
             f = plot_weights((weights_before-weights_after)*reward)
-            f.savefig('plots/'+run_str+'_weight_diff.png')
-            plt.clf()
+            if SAVEFIG:
+                f.savefig('plots/'+run_str+'_weight_diff.png')
+            plt.figure()
 
     f = plot_rates()
-    f.savefig("plots/firing_rates.png")
+    if SAVEFIG:
+        f.savefig("plots/firing_rates.png")
 
     f = plot_weights(get_weights(inputs))
-    f.savefig("plots/final_weights.png")
+    if SAVEFIG:
+        f.savefig("plots/final_weights.png")
 
     f = plot_rewards()
-    f.savefig("plots/rewards.png")
+    if SAVEFIG:
+        f.savefig("plots/rewards.png")
 
+    if not SAVEFIG:
+        plt.show()

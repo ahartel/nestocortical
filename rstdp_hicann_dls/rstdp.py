@@ -1,3 +1,4 @@
+import sys
 SAVEFIG=True
 if SAVEFIG:
     import matplotlib as mpl
@@ -13,16 +14,16 @@ nest.Install("mymodule")
 t_sim = 1000.0  # how long we simulate
 n_ex = 16000     # size of the excitatory population
 n_in = 4000      # size of the inhibitory population
-r_expect = 40.0       # mean rate of the ex5itatory population
+r_expect = 35.0       # mean rate of the ex5itatory population
 r_inp = 40.0      # initial rate of the inhibitory population
-epsc = 20.0      # peak amplitude of excitatory synaptic currents
+epsc = 10.0      # peak amplitude of excitatory synaptic currents
 ipsc = -45.0     # peak amplitude of inhibitory synaptic currents
 d = 1.0          # synaptic delay
 lower = 15.0     # lower bound of the search interval
 upper = 25.0     # upper bound of the search interval
 prec = 0.01      # how close need the excitatory rates be
 
-NUM_RUNS = 1000
+NUM_RUNS = 2000
 NUM_NEURONS = 5
 PLOT_WEIGHTS = False
 
@@ -31,6 +32,8 @@ rewards = []
 mean_rewards = []
 successes = []
 figures = []
+# sum_of_weight_updates = np.array([[0.0] for i in range(32*5)])
+weight_diff_storage = np.zeros((NUM_RUNS,32*5,1))
 rates = np.zeros((NUM_NEURONS,NUM_RUNS))
 
 ndict = {
@@ -123,7 +126,7 @@ def apply_reward(pop,weights_before,weights_after,reward):
 
     rewards.append(reward)
     successes.append(success)
-    mean_R = reward + (reward-mean_R)/10.0
+    mean_R = reward + (reward-mean_R)/5.0
     mean_rewards.append(mean_R)
 
 def set_up_network():
@@ -145,15 +148,15 @@ def set_up_network():
                 "mu_plus":0.0,
                 "mu_minus":0.0,
                 "alpha": 1.0,
-                "lambda": 0.0001,
+                "lambda": 0.0005,
                 "weight": epsc}
     nest.Connect(inputs, neuronpop, conn_dict, syn_dict)
 
     # Apply some non-changing background
     bg_syn_dict = {"model": "static_synapse",
-                   "weight": epsc}
+                   "weight": 2*epsc}
     background = nest.Create("poisson_generator",1)
-    nest.SetStatus(background, {"rate": 10*r_inp})
+    nest.SetStatus(background, {"rate": 15*r_inp})
     nest.Connect(background,neuronpop,conn_dict,bg_syn_dict)
 
     voltmeter = nest.Create("voltmeter",NUM_NEURONS)
@@ -175,6 +178,7 @@ if __name__ == '__main__':
         print "Run:",run_str
 
         weights_before = get_weights(inputs)
+        # print weights_before
 
         if PLOT_WEIGHTS:
             f = plot_weights(weights_before)
@@ -191,6 +195,7 @@ if __name__ == '__main__':
         reward = calculate_reward(run,spikedetector)
 
         weights_after = get_weights(inputs)
+        weight_diff_storage[run] = weights_after-weights_before
 
         nest.ResetKernel()
         inputs, neuronpop, voltmeter, spikedetector = set_up_network()
@@ -198,7 +203,7 @@ if __name__ == '__main__':
         apply_reward(inputs,weights_before,weights_after,reward)
 
         if PLOT_WEIGHTS:
-            f = plot_weights((weights_before-weights_after)*reward)
+            f = plot_weights((weights_after-weights_before)*reward)
             if SAVEFIG:
                 f.savefig('plots/'+run_str+'_weight_diff.png')
             plt.figure()
@@ -217,3 +222,35 @@ if __name__ == '__main__':
 
     if not SAVEFIG:
         plt.show()
+
+    # Data evaluation
+    mean_success = np.mean(successes)
+    print "Mean success:", mean_success
+    success_from_mean = successes - mean_success
+
+    mean_eij = np.mean(weight_diff_storage,0)
+    # print "Mean eligibility * mean success:", mean_eij * mean_success
+
+    cov = 0
+    for run in range(NUM_RUNS):
+        cov += (successes[run] - mean_success) \
+                * (weight_diff_storage[run] - mean_eij)
+    cov /= float(NUM_RUNS)
+
+    print np.reshape(cov,(32,5))
+    print np.reshape(mean_eij,(32,5))
+
+    f,ax = plt.subplots(1,2)
+    ax[0].imshow(np.reshape(cov,(32,5)),
+                 interpolation='none')
+    ax[0].set_title("Covariance")
+    ax[1].imshow(np.reshape(mean_eij * mean_success,(32,5)),
+                 vmin=np.min(cov),
+                 vmax=np.max(cov),
+                 interpolation='none')
+    ax[1].set_title("Mean eij")
+    PCM=ax[1].get_children()[2]
+    plt.colorbar(PCM, ax=ax[1])
+    f.savefig("plots/mean_delta_w.png")
+
+

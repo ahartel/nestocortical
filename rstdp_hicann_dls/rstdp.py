@@ -1,13 +1,9 @@
 import sys
-SAVEFIG=True
-if SAVEFIG:
-    import matplotlib as mpl
-    mpl.use('Agg')
 import nest
-import nest.voltage_trace
-import nest.raster_plot
 import numpy as np
-import matplotlib.pyplot as plt
+import pickle as pkl
+import nest.raster_plot
+import nest.voltage_trace
 
 nest.Install("mymodule")
 
@@ -15,30 +11,32 @@ t_sim = 1000.0  # how long we simulate
 n_ex = 16000     # size of the excitatory population
 n_in = 4000      # size of the inhibitory population
 r_expect = 35.0       # mean rate of the ex5itatory population
-r_inp = 40.0      # initial rate of the inhibitory population
-epsc = 10.0      # peak amplitude of excitatory synaptic currents
-ipsc = -45.0     # peak amplitude of inhibitory synaptic currents
+r_inp = 60.0      # initial rate of the inhibitory population
+r_inp_bg = 60.0
+epsc_bg = 15.0      # peak amplitude of excitatory synaptic currents
+ipsc_bg = -5.0      # peak amplitude of excitatory synaptic currents
+epsc = 16.0
 d = 1.0          # synaptic delay
-lower = 15.0     # lower bound of the search interval
-upper = 25.0     # upper bound of the search interval
-prec = 0.01      # how close need the excitatory rates be
 
-NUM_RUNS = 2000
-NUM_NEURONS = 5
+NUM_RUNS = 1500
+NUM_NEURONS = 1
 PLOT_WEIGHTS = False
+NUM_BG_INH = 0
+NUM_BG_EXC = 0
+NUM_BG = NUM_BG_INH + NUM_BG_EXC
 
 mean_R = 0.5
 rewards = []
 mean_rewards = []
 successes = []
 figures = []
-# sum_of_weight_updates = np.array([[0.0] for i in range(32*5)])
-weight_diff_storage = np.zeros((NUM_RUNS,32*5,1))
+weight_diff_storage = np.zeros((NUM_RUNS,(32-NUM_BG)*NUM_NEURONS,1))
 rates = np.zeros((NUM_NEURONS,NUM_RUNS))
 
 ndict = {
             "tau_m": 20.0,
         }
+
 
 def get_weights(pop):
     conns = nest.GetConnections(pop, synapse_model="rstdp_synapse")
@@ -54,44 +52,10 @@ def set_weights(pop,weights):
     # plot_weights(np.array(nest.GetStatus(conns, ["weight"])))
 
 def plot_weights(weights):
-    reshaped = np.reshape(weights,(32,5))
+    reshaped = np.reshape(weights,((32-NUM_BG),NUM_NEURONS))
     f = plt.figure()
     plt.imshow(reshaped,interpolation='none')
     plt.colorbar()
-    return f
-
-def movingaverage (values, window):
-    weights = np.repeat(1.0, window)/window
-    sma = np.convolve(values, weights, 'valid')
-    return sma
-
-def plot_rates():
-    global rates
-    f = plt.figure()
-    for nrn in range(NUM_NEURONS):
-        av = movingaverage(rates[nrn],5)
-        ax = plt.plot(np.arange(NUM_RUNS),rates[nrn],'x')
-        plt.plot(np.arange(NUM_RUNS)[NUM_RUNS-len(av):],av,'-',
-                 color = ax[0].get_color())
-    return f
-
-def plot_rewards():
-    global rewards
-    global successes
-    global mean_rewards
-
-    f,axr = plt.subplots(1)
-    axr.plot(rewards,'-b')
-    axr.plot(mean_rewards,'--b')
-    axr.set_xlabel("Run number")
-    axr.set_ylabel("Reward")
-
-    axl = axr.twinx()
-    axl.plot(successes,'xr')
-    # axl.axhline(np.mean(successes),linestyle='--',color='r')
-    av = movingaverage(successes,50)
-    axl.plot(np.arange(NUM_RUNS)[NUM_RUNS-len(av):], av,'-r')
-    axl.set_ylabel("Success")
     return f
 
 def calculate_reward(run,spikedetector):
@@ -126,7 +90,7 @@ def apply_reward(pop,weights_before,weights_after,reward):
 
     rewards.append(reward)
     successes.append(success)
-    mean_R = reward + (reward-mean_R)/5.0
+    mean_R = mean_R + (reward-mean_R)/5.0
     mean_rewards.append(mean_R)
 
 def set_up_network():
@@ -136,10 +100,10 @@ def set_up_network():
         nest.SetStatus([neuron], {"tau_m": np.random.uniform(15.0,25.0)})
 
     # The background noise that will be connected with plastic synapses
-    noise = nest.Create("poisson_generator", 32)
+    noise = nest.Create("poisson_generator", 32-NUM_BG)
     nest.SetStatus(noise, {"rate": r_inp})
     # They need to be parroted to allow STDP
-    inputs = nest.Create("parrot_neuron",32)
+    inputs = nest.Create("parrot_neuron", 32-NUM_BG)
     nest.Connect(noise,inputs,{'rule':'one_to_one'})
 
     # Connect the parrots to the neurons under test
@@ -148,16 +112,22 @@ def set_up_network():
                 "mu_plus":0.0,
                 "mu_minus":0.0,
                 "alpha": 1.0,
-                "lambda": 0.0005,
+                "lambda": 0.0001,
                 "weight": epsc}
     nest.Connect(inputs, neuronpop, conn_dict, syn_dict)
 
     # Apply some non-changing background
-    bg_syn_dict = {"model": "static_synapse",
-                   "weight": 2*epsc}
-    background = nest.Create("poisson_generator",1)
-    nest.SetStatus(background, {"rate": 15*r_inp})
-    nest.Connect(background,neuronpop,conn_dict,bg_syn_dict)
+    if NUM_BG > 0:
+        bg_syn_dict_exc = {"model": "static_synapse",
+                           "weight": epsc_bg}
+        bg_syn_dict_inh = {"model": "static_synapse",
+                           "weight": ipsc_bg}
+        background_inh = nest.Create("poisson_generator",NUM_BG_INH)
+        background_exc = nest.Create("poisson_generator",NUM_BG_EXC)
+        nest.SetStatus(background_inh, {"rate": r_inp_bg})
+        nest.SetStatus(background_exc, {"rate": r_inp_bg})
+        nest.Connect(background_exc,neuronpop,conn_dict,bg_syn_dict_exc)
+        nest.Connect(background_inh,neuronpop,conn_dict,bg_syn_dict_inh)
 
     voltmeter = nest.Create("voltmeter",NUM_NEURONS)
     spikedetector = nest.Create("spike_detector")
@@ -208,49 +178,13 @@ if __name__ == '__main__':
                 f.savefig('plots/'+run_str+'_weight_diff.png')
             plt.figure()
 
-    f = plot_rates()
-    if SAVEFIG:
-        f.savefig("plots/firing_rates.png")
+    pkl.dump(rates,open("data/firing_rates.pkl",'w'))
 
-    f = plot_weights(get_weights(inputs))
-    if SAVEFIG:
-        f.savefig("plots/final_weights.png")
+    pkl.dump(get_weights(inputs),open("data/final_weights.pkl",'w'))
+    # f = plot_weights(get_weights(inputs))
+    # if SAVEFIG:
+        # f.savefig("plots/final_weights.png")
 
-    f = plot_rewards()
-    if SAVEFIG:
-        f.savefig("plots/rewards.png")
-
-    if not SAVEFIG:
-        plt.show()
-
-    # Data evaluation
-    mean_success = np.mean(successes)
-    print "Mean success:", mean_success
-    success_from_mean = successes - mean_success
-
-    mean_eij = np.mean(weight_diff_storage,0)
-    # print "Mean eligibility * mean success:", mean_eij * mean_success
-
-    cov = 0
-    for run in range(NUM_RUNS):
-        cov += (successes[run] - mean_success) \
-                * (weight_diff_storage[run] - mean_eij)
-    cov /= float(NUM_RUNS)
-
-    print np.reshape(cov,(32,5))
-    print np.reshape(mean_eij,(32,5))
-
-    f,ax = plt.subplots(1,2)
-    ax[0].imshow(np.reshape(cov,(32,5)),
-                 interpolation='none')
-    ax[0].set_title("Covariance")
-    ax[1].imshow(np.reshape(mean_eij * mean_success,(32,5)),
-                 vmin=np.min(cov),
-                 vmax=np.max(cov),
-                 interpolation='none')
-    ax[1].set_title("Mean eij")
-    PCM=ax[1].get_children()[2]
-    plt.colorbar(PCM, ax=ax[1])
-    f.savefig("plots/mean_delta_w.png")
-
+    pkl.dump((rewards, successes, mean_rewards),open('data/rewards.pkl','w'))
+    pkl.dump(weight_diff_storage, open('data/weight_diffs.pkl','w'))
 

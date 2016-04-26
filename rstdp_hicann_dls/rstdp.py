@@ -12,20 +12,20 @@ from spike_train import vp_metric_other
 nest.Install("mymodule")
 
 TSIM = 1000.0  # how long we simulate
-r_expect = 35.0       # mean rate of the ex5itatory population
-r_inp = 60.0      # initial rate of the inhibitory population
-r_inp_bg = 60.0
-epsc_bg = 15.0      # peak amplitude of excitatory synaptic currents
-ipsc_bg = -5.0      # peak amplitude of excitatory synaptic currents
-epsc = 16.0
+r_inp = 40.0
+r_inp_bg = 100.0
+epsc_bg = 15.0
+ipsc_bg = -10.0
+EPSC = 20.0
 
-COST = 1.0
+# COST = 10.0
+COST = 0.20
 
-NUM_RUNS = 200
-NUM_NEURONS = 1
+NUM_RUNS = 2000
+NUM_NEURONS = 3
 PLOT_WEIGHTS = False
-NUM_BG_INH = 0
-NUM_BG_EXC = 0
+NUM_BG_INH = 1
+NUM_BG_EXC = 1
 NUM_BG = NUM_BG_INH + NUM_BG_EXC
 
 figures = []
@@ -71,22 +71,30 @@ def get_spiketrains(spikedetector):
 
 def calculate_reward(run, spikedetector, target):
     global rates
-    R = 0.0
+    reward = 0.0
 
     out = get_spiketrains(spikedetector)
 
     for neuron in range(NUM_NEURONS):
         num = len(out[neuron])
-        # print("  -> Neuron %d rate: %6.2f Hz (goal: %4.2f Hz)" \
-                # % (neuron, num, r_expect))
+        print "Measured:",out[neuron]
+        print " ",num
+        print "Target:",target[neuron]
+        print " ",len(target[neuron])
 
-        total_spikes = num + len(target)
-        R += 1.0 - vp_metric_other(target, out[neuron], COST)/total_spikes
+        total_spikes = num + len(target[neuron])
+        distance = vp_metric_other(target[neuron], out[neuron], COST)
+        print "Distance:",distance
+
+        add_reward = 1.0 - distance/total_spikes
+        print "Reward:",add_reward
+        reward += add_reward
+
         rates[neuron][run] = num
 
-    R /= float(NUM_NEURONS)
+    reward /= float(NUM_NEURONS)
 
-    return R
+    return reward, out
 
 def apply_reward(pop, weights_before, weights_after, reward, mean_reward):
     """Set the new weights of pop using set_weights. The weights are calculated
@@ -96,14 +104,14 @@ def apply_reward(pop, weights_before, weights_after, reward, mean_reward):
 
     success = reward-mean_reward
 
-    new_weights = (weights_after-weights_before)*reward + weights_before
+    new_weights = (weights_after-weights_before)*success*10.0 + weights_before
 
     set_weights(pop, new_weights)
 
     return success
 
 
-def set_up_network():
+def set_up_network(epsc):
     """Configure neuron populations.
     ========== ================= =================
     name       number of neurons type
@@ -159,14 +167,16 @@ def set_up_network():
 
     return inputs, neuronpop, voltmeter, spikedetector
 
-def generate_target_spiketrain(pop, spikedetector):
+def generate_target_spiketrain(pop, spikedetector, epsc):
     old_weights = get_weights(pop)
     weights = copy.copy(old_weights)
     for row in range(len(weights)):
-        weights[row] = math.sin(float(row)/5.0) + 1.0
+        weights[row] = 5*math.sin(float(row)/10.0) + epsc
+    print weights
     set_weights(pop, weights)
     nest.Simulate(TSIM)
     target_trains = get_spiketrains(spikedetector)
+    print target_trains
 
     return target_trains
 
@@ -175,13 +185,17 @@ if __name__ == '__main__':
     mean_R = 0.5
     successes = []
     mean_rewards = []
+    spiketrains = []
 
-    inputs, neuronpop, voltmeter, spikedetector = set_up_network()
+    inputs, neuronpop, voltmeter, spikedetector = set_up_network(EPSC)
 
-    target = generate_target_spiketrain(inputs, spikedetector)
+    target = [[] for nrn in range(NUM_NEURONS)]
+    is_empty = lambda x : not x
+    while any(map(is_empty, target)):
+        target = generate_target_spiketrain(inputs, spikedetector, EPSC)
 
     nest.ResetKernel()
-    inputs, neuronpop, voltmeter, spikedetector = set_up_network()
+    inputs, neuronpop, voltmeter, spikedetector = set_up_network(EPSC)
 
     for run in range(NUM_RUNS):
         run_str = "%03d" % (run,)
@@ -202,13 +216,14 @@ if __name__ == '__main__':
         # f = nest.raster_plot.from_device(spikedetector, hist=True)
         # f[0].figure.savefig('plots/'+run_str+'_raster_plot.png')
 
-        reward = calculate_reward(run, spikedetector, target)
+        reward, spiketrains_run = calculate_reward(run, spikedetector, target)
+        spiketrains.append(spiketrains_run)
 
         weights_after = get_weights(inputs)
         weight_diff_storage[run] = weights_after-weights_before
 
         nest.ResetKernel()
-        inputs, neuronpop, voltmeter, spikedetector = set_up_network()
+        inputs, neuronpop, voltmeter, spikedetector = set_up_network(EPSC)
 
         success = apply_reward(inputs, weights_before, weights_after, reward,
                                mean_R)
@@ -225,6 +240,8 @@ if __name__ == '__main__':
             # plt.figure()
 
     pkl.dump(rates, open("data/firing_rates.pkl", 'w'))
+    pkl.dump(spiketrains, open("data/spiketrains.pkl", 'w'))
+    pkl.dump(target, open("data/target_spiketrains.pkl", 'w'))
 
     pkl.dump(get_weights(inputs), open("data/final_weights.pkl", 'w'))
     # f = plot_weights(get_weights(inputs))

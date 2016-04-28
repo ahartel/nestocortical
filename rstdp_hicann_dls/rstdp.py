@@ -2,7 +2,7 @@
 # import sys
 import numpy as np
 import nest
-# import math
+import math
 import copy
 import random
 import pickle as pkl
@@ -16,20 +16,20 @@ nest.Install("mymodule")
 SEED = 42
 
 TSIM = 1000.0  # how long we simulate
-R_INP = 10.0
-R_INP_BG = 100.0
-EPSC_BG = 5.0
+R_INP = 8.0
+R_INP_BG = 0.1
+EPSC_BG = 100.0
 IPSC_BG = -5.0
-EPSC = 20.0
-TARGET_EPSP = 80.0
+EPSC = 14.0
+TARGET_EPSP = 30.0
 
 # COST = 10.0
 COST = 0.10
 
-NUM_RUNS = 1000
+NUM_RUNS = 5000
 NUM_NEURONS = 1
-NUM_BG_INH = 14
-NUM_BG_EXC = 14
+NUM_BG_INH = 1
+NUM_BG_EXC = 20
 NUM_BG = NUM_BG_INH + NUM_BG_EXC
 
 
@@ -42,15 +42,16 @@ SYN_DICT = {"model": "rstdp_synapse",
             "mu_plus":0.0,
             "mu_minus":0.0,
             "alpha": 1.0,
-            "lambda": 0.0001,
-            "lambda": 0.001,
+            # "lambda": 0.0001,
+            "lambda": 0.004,
             "tau_plus": 20.0,
             "Wmax": 200.0,
             # "tau_minus": 20.0,
             # "weight": {'distribution': 'normal_clipped', 'low': 0.5,
             #            'mu': EPSC/1.0, 'sigma': EPSC/4.0}}
-            "weight": {'distribution': 'uniform', 'low': EPSC*0.7,
-                       'high': EPSC*1.3}}
+            # "weight": {'distribution': 'uniform', 'low': EPSC*0.7,
+            #            'high': EPSC*1.3}}
+            'weight': EPSC}
 
 
 def get_weights(pop):
@@ -112,7 +113,7 @@ def apply_reward(pop, wgt_before, wgt_after, reward, mean_reward):
 
     success_signal = reward-mean_reward
 
-    new_weights = (wgt_after-wgt_before)*success_signal*10.0 + wgt_before
+    new_weights = (wgt_after-wgt_before)*success_signal*1.0 + wgt_before
 
     set_weights(pop, new_weights)
 
@@ -209,10 +210,10 @@ def generate_target_spiketrain(inputpop, nrnpop, spikedetector):
     old_weights = get_weights(inputpop)
     weights = copy.copy(old_weights)
     for row in range(len(weights)):
-        # weights[row] = 5*math.sin(float(row)/10.0) + EPSC
+        weights[row] = TARGET_EPSP*math.sin(float(row)/5.0)
         # weights[row] = random.randint(0, 1) * TARGET_EPSP
-        weights[row] = 0
-    weights[int((32-NUM_BG)/2)] = TARGET_EPSP
+        # weights[row] = 0
+    # weights[int((32-NUM_BG)/2)] = TARGET_EPSP
     print weights
     set_weights(inputpop, weights)
     nest.Simulate(TSIM)

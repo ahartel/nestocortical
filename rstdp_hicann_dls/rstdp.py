@@ -16,22 +16,24 @@ nest.Install("mymodule")
 SEED = 42
 
 TSIM = 1000.0  # how long we simulate
-R_INP = 8.0
+R_INP = 40.0
 R_INP_BG = 0.1
 EPSC_BG = 100.0
 IPSC_BG = -5.0
-EPSC = 14.0
-TARGET_EPSP = 30.0
+EPSC = 25.0
+TARGET_EPSP = 50.0
 
 # COST = 10.0
 COST = 0.10
 
-NUM_RUNS = 5000
-NUM_NEURONS = 1
-NUM_BG_INH = 1
+NUM_RUNS = 2000
+NUM_SYNAPSES = 21
+NUM_TGT_NEURONS = 1
+NUM_BG_INH = 0
 NUM_BG_EXC = 20
 NUM_BG = NUM_BG_INH + NUM_BG_EXC
-
+NUM_REAL_INPUTS = NUM_SYNAPSES-NUM_BG
+assert NUM_REAL_INPUTS > 0
 
 NEURON_DICT = {
     "tau_m": 30.0,
@@ -43,7 +45,7 @@ SYN_DICT = {"model": "rstdp_synapse",
             "mu_minus":0.0,
             "alpha": 1.0,
             # "lambda": 0.0001,
-            "lambda": 0.004,
+            "lambda": 0.002,
             "tau_plus": 20.0,
             "Wmax": 200.0,
             # "tau_minus": 20.0,
@@ -72,7 +74,7 @@ def set_weights(pop, weights):
 
 def get_spiketrains(nrnpop, spikedetector):
     events = nest.GetStatus(spikedetector, ["events"])[0][0]
-    out = [[] for nrn in range(NUM_NEURONS)]
+    out = [[] for nrn in range(NUM_TGT_NEURONS)]
     for nrn, time in zip(events['senders'], events['times']):
         out[nrnpop.index(nrn)].append(time)
 
@@ -80,11 +82,11 @@ def get_spiketrains(nrnpop, spikedetector):
 
 def calculate_reward(nrnpop, spikedetector, target):
     reward = 0.0
-    rates = np.zeros(NUM_NEURONS)
+    rates = np.zeros(NUM_TGT_NEURONS)
 
     out = get_spiketrains(nrnpop, spikedetector)
 
-    for neuron in range(NUM_NEURONS):
+    for neuron in range(NUM_TGT_NEURONS):
         num = len(out[neuron])
         # print "Measured:", out[neuron]
         # print " ", num
@@ -101,7 +103,7 @@ def calculate_reward(nrnpop, spikedetector, target):
 
         rates[neuron] = num
 
-    reward /= float(NUM_NEURONS)
+    reward /= float(NUM_TGT_NEURONS)
 
     return reward, out, rates
 
@@ -119,35 +121,69 @@ def apply_reward(pop, wgt_before, wgt_after, reward, mean_reward):
 
     return success_signal
 
+def generate_poisson_spike_trains():
+    """Generate poisson spike trains with rate R_INP for all NUM_REAL_INPUTS"""
+    trains = []
+    for _ in range(NUM_REAL_INPUTS):
+        train = []
+        num_spikes = np.random.poisson(R_INP)
+        for _ in range(num_spikes):
+            pick = np.random.uniform(0, TSIM)
+            pick = float(format(pick, '.1f'))
+            train.append(pick)
+        trains.append(sorted(train))
+    print trains
+    return trains
 
 def set_up_network_poisson_input():
     """Configure neuron populations.
-    ========== ================= =================
-    name       number of neurons type
-    ========== ================= =================
-    noise      32-NUM_BG         poisson_generator
-    inputs     32-NUM_BG         parrot_neuron
-    ========== ================= =================
+    ========== =================== =================
+    name       number of neurons   type
+    ========== =================== =================
+    noise      NUM_SYNAPSES-NUM_BG poisson_generator
+    inputs     NUM_SYNAPSES-NUM_BG parrot_neuron
+    ========== =================== =================
     """
     # The actual random input that will be connected with plastic synapses
-    noise = nest.Create("poisson_generator", 32-NUM_BG)
+    noise = nest.Create("poisson_generator", NUM_SYNAPSES-NUM_BG)
     nest.SetStatus(noise, {"rate": R_INP})
     # They need to be parroted to allow STDP
-    inputs = nest.Create("parrot_neuron", 32-NUM_BG)
+    inputs = nest.Create("parrot_neuron", NUM_SYNAPSES-NUM_BG)
     nest.Connect(noise, inputs, {'rule':'one_to_one'})
+
+    return set_up_network_trunk(inputs)
+
+def set_up_network_constant_input():
+    """Configure neuron populations.
+    ========== =================== =================
+    name       number of neurons   type
+    ========== =================== =================
+    inputs     NUM_SYNAPSES-NUM_BG spike_generator
+    ========== =================== =================
+    """
+    source = nest.Create('spike_generator', NUM_SYNAPSES-NUM_BG)
+    for inpt in range(NUM_SYNAPSES-NUM_BG):
+        spiketimes = np.linspace(1, TSIM+1, R_INP, endpoint=False)
+        print spiketimes
+        nest.SetStatus([source[inpt]],
+                       {'spike_times': spiketimes})
+
+    # They need to be parroted to allow STDP
+    inputs = nest.Create("parrot_neuron", NUM_SYNAPSES-NUM_BG)
+    nest.Connect(source, inputs, {'rule':'one_to_one'})
 
     return set_up_network_trunk(inputs)
 
 def set_up_network_serial_input():
     """Configure neuron populations.
-    ========== ================= =================
-    name       number of neurons type
-    ========== ================= =================
-    inputs     32-NUM_BG         spike_generator
-    ========== ================= =================
+    ========== =================== =================
+    name       number of neurons   type
+    ========== =================== =================
+    inputs     NUM_SYNAPSES-NUM_BG spike_generator
+    ========== =================== =================
     """
-    source = nest.Create('spike_generator', 32-NUM_BG)
-    for inpt in range(32-NUM_BG):
+    source = nest.Create('spike_generator', NUM_SYNAPSES-NUM_BG)
+    for inpt in range(NUM_SYNAPSES-NUM_BG):
         nest.SetStatus([source[inpt]],
                        {'spike_times':[1.0 + 30.0 * float(inpt),]})
                                        # 2.0 + 30.0 * float(inpt),
@@ -156,23 +192,42 @@ def set_up_network_serial_input():
                                        # 5.0 + 30.0 * float(inpt)]})
 
     # They need to be parroted to allow STDP
-    inputs = nest.Create("parrot_neuron", 32-NUM_BG)
+    inputs = nest.Create("parrot_neuron", NUM_SYNAPSES-NUM_BG)
     nest.Connect(source, inputs, {'rule':'one_to_one'})
 
     return set_up_network_trunk(inputs)
+
+def set_up_network(spikes):
+    """Configure neuron populations.
+    ========== =================== =================
+    name       number of neurons   type
+    ========== =================== =================
+    inputs     NUM_SYNAPSES-NUM_BG spike_generator
+    ========== =================== =================
+    """
+    source = nest.Create('spike_generator', NUM_SYNAPSES-NUM_BG)
+    for inpt in range(NUM_SYNAPSES-NUM_BG):
+        nest.SetStatus([source[inpt]], {'spike_times': spikes[inpt]})
+
+    # They need to be parroted to allow STDP
+    inputs = nest.Create("parrot_neuron", NUM_SYNAPSES-NUM_BG)
+    nest.Connect(source, inputs, {'rule':'one_to_one'})
+
+    return set_up_network_trunk(inputs)
+
 
 def set_up_network_trunk(inputs):
     """Configure neuron populations.
     ========== ================= =================
     name       number of neurons type
     ========== ================= =================
-    neuronpop  NUM_NEURONS       iaf_neuron
+    neuronpop  NUM_TGT_NEURONS   iaf_neuron
     background NUM_BG            poisson_generator
     ========== ================= =================
     """
 
     # The actual neuron population
-    neuronpop = nest.Create("iaf_neuron", NUM_NEURONS, params=NEURON_DICT)
+    neuronpop = nest.Create("iaf_neuron", NUM_TGT_NEURONS, params=NEURON_DICT)
     for neuron in neuronpop:
         # print nest.GetStatus([neuron])
         nest.SetStatus([neuron], {"tau_m": np.random.uniform(25.0, 35.0)})
@@ -187,14 +242,16 @@ def set_up_network_trunk(inputs):
                            "weight": EPSC_BG}
         bg_syn_dict_inh = {"model": "static_synapse",
                            "weight": IPSC_BG}
-        background_inh = nest.Create("poisson_generator", NUM_BG_INH)
-        background_exc = nest.Create("poisson_generator", NUM_BG_EXC)
-        nest.SetStatus(background_inh, {"rate": R_INP_BG})
-        nest.SetStatus(background_exc, {"rate": R_INP_BG})
-        nest.Connect(background_exc, neuronpop, conn_dict, bg_syn_dict_exc)
-        nest.Connect(background_inh, neuronpop, conn_dict, bg_syn_dict_inh)
+        if NUM_BG_INH > 0:
+            background_inh = nest.Create("poisson_generator", NUM_BG_INH)
+            nest.SetStatus(background_inh, {"rate": R_INP_BG})
+            nest.Connect(background_inh, neuronpop, conn_dict, bg_syn_dict_inh)
+        if NUM_BG_EXC > 0:
+            background_exc = nest.Create("poisson_generator", NUM_BG_EXC)
+            nest.SetStatus(background_exc, {"rate": R_INP_BG})
+            nest.Connect(background_exc, neuronpop, conn_dict, bg_syn_dict_exc)
 
-    voltmeter = nest.Create("voltmeter", NUM_NEURONS)
+    voltmeter = nest.Create("voltmeter", NUM_TGT_NEURONS)
     spikedetector = nest.Create("spike_detector")
 
     nest.SetStatus(voltmeter, {"withgid": True, "withtime": True})
@@ -210,10 +267,10 @@ def generate_target_spiketrain(inputpop, nrnpop, spikedetector):
     old_weights = get_weights(inputpop)
     weights = copy.copy(old_weights)
     for row in range(len(weights)):
-        weights[row] = TARGET_EPSP*math.sin(float(row)/5.0)
+        # weights[row] = TARGET_EPSP*math.sin(float(row)/5.0)
         # weights[row] = random.randint(0, 1) * TARGET_EPSP
-        # weights[row] = 0
-    # weights[int((32-NUM_BG)/2)] = TARGET_EPSP
+        weights[row] = TARGET_EPSP
+    # weights[int((NUM_SYNAPSES-NUM_BG)/2)] = TARGET_EPSP
     print weights
     set_weights(inputpop, weights)
     nest.Simulate(TSIM)
@@ -226,7 +283,6 @@ def reset_kernel():
     old_seed = nest.GetStatus([0])[0]['rng_seeds'][0]
     nest.ResetKernel()
     nest.SetStatus([0], {'rng_seeds': (old_seed + 1,)})
-    # print old_seed,nest.GetStatus([0])
 
 
 def main_function():
@@ -237,17 +293,20 @@ def main_function():
     successes = []
     mean_rewards = []
     spiketrains = []
-    weight_diff_storage = np.zeros((NUM_RUNS, (32-NUM_BG)*NUM_NEURONS, 1))
-    rates = np.zeros((NUM_RUNS, NUM_NEURONS))
+    weight_diff_storage = np.zeros((NUM_RUNS,
+                                    (NUM_SYNAPSES-NUM_BG)*NUM_TGT_NEURONS, 1))
+    rates = np.zeros((NUM_RUNS, NUM_TGT_NEURONS))
 
-    target = [[] for nrn in range(NUM_NEURONS)]
+    # generte input spike trains for all NUM_SYNAPSES
+    input_spikes = generate_poisson_spike_trains()
+    # input_spikes = generate_regular_spike_trains()
+
+    target = [[] for nrn in range(NUM_TGT_NEURONS)]
     is_empty = lambda x: not x
     while any([is_empty(tgt) for tgt in target]):
         reset_kernel()
-        # inputs, neuronpop, voltmeter, spikedetector = \
-                                                # set_up_network_serial_input()
         inputs, neuronpop, voltmeter, spikedetector = \
-                                                set_up_network_poisson_input()
+                                                set_up_network(input_spikes)
         target = generate_target_spiketrain(inputs, neuronpop, spikedetector)
         nest.voltage_trace.from_device([voltmeter[0]])
         plt.show()
@@ -255,8 +314,8 @@ def main_function():
     target_weights = get_weights(inputs)
 
     reset_kernel()
-    # inputs, neuronpop, voltmeter, spikedetector = set_up_network_serial_input()
-    inputs, neuronpop, voltmeter, spikedetector = set_up_network_poisson_input()
+    inputs, neuronpop, voltmeter, spikedetector = \
+                                                set_up_network(input_spikes)
 
     initial_weights = get_weights(inputs)
 
@@ -284,9 +343,8 @@ def main_function():
         weight_diff_storage[run] = weights_after-weights_before
 
         reset_kernel()
-        # inputs, neuronpop, voltmeter, spikedetector = set_up_network_serial_input()
         inputs, neuronpop, voltmeter, spikedetector = \
-                                                set_up_network_poisson_input()
+                                                set_up_network(input_spikes)
 
         success = apply_reward(inputs, weights_before, weights_after, reward,
                                mean_reward)
@@ -311,6 +369,5 @@ if __name__ == '__main__':
     random.seed(1)
     np.random.seed(seed=1)
     nest.SetStatus([0], {'rng_seeds': (SEED,)})
-    print nest.GetStatus([0])
     main_function()
 

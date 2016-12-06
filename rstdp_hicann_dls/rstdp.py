@@ -16,29 +16,30 @@ nest.Install("mymodule")
 SEED = 42
 
 TSIM = 1000.0  # how long we simulate
-R_INP = 40.0
+R_INP = 20.0
 R_INP_BG = 0.1
 EPSC_BG = 100.0
 IPSC_BG = -5.0
-EPSC = 25.0
-TARGET_EPSP = 50.0
+EPSC = 20.0
+TARGET_EPSP = 20.0
+TARGET_EPSP_OFFSET = 30.0
 
 # COST = 10.0
 COST = 0.10
 
 NUM_RUNS = 2000
-NUM_SYNAPSES = 21
+NUM_SYNAPSES = 32
 NUM_TGT_NEURONS = 1
 NUM_BG_INH = 0
-NUM_BG_EXC = 20
+NUM_BG_EXC = 30
 NUM_BG = NUM_BG_INH + NUM_BG_EXC
 NUM_REAL_INPUTS = NUM_SYNAPSES-NUM_BG
 assert NUM_REAL_INPUTS > 0
 
-NEURON_DICT = {
+NEURON_DICT = [{
     "tau_m": 30.0,
     "V_th": -68.0
-    }
+    } for _ in range(NUM_TGT_NEURONS)]
 
 SYN_DICT = {"model": "rstdp_synapse",
             "mu_plus":0.0,
@@ -73,6 +74,8 @@ def set_weights(pop, weights):
 
 
 def get_spiketrains(nrnpop, spikedetector):
+    """Extract spikes from spikedetector and map neuron GIDs to neuron number
+    inside population nrnpop"""
     events = nest.GetStatus(spikedetector, ["events"])[0][0]
     out = [[] for nrn in range(NUM_TGT_NEURONS)]
     for nrn, time in zip(events['senders'], events['times']):
@@ -81,6 +84,8 @@ def get_spiketrains(nrnpop, spikedetector):
     return out
 
 def calculate_reward(nrnpop, spikedetector, target):
+    """Calculate reward as average normalized VP distance between individual
+    neurons' spike trains and each neuron's target spike train."""
     reward = 0.0
     rates = np.zeros(NUM_TGT_NEURONS)
 
@@ -114,6 +119,7 @@ def apply_reward(pop, wgt_before, wgt_after, reward, mean_reward):
     """
 
     success_signal = reward-mean_reward
+    # success_signal = 1.0
 
     new_weights = (wgt_after-wgt_before)*success_signal*1.0 + wgt_before
 
@@ -197,7 +203,7 @@ def set_up_network_serial_input():
 
     return set_up_network_trunk(inputs)
 
-def set_up_network(spikes):
+def set_up_network(spikes, bg_rate):
     """Configure neuron populations.
     ========== =================== =================
     name       number of neurons   type
@@ -213,10 +219,10 @@ def set_up_network(spikes):
     inputs = nest.Create("parrot_neuron", NUM_SYNAPSES-NUM_BG)
     nest.Connect(source, inputs, {'rule':'one_to_one'})
 
-    return set_up_network_trunk(inputs)
+    return set_up_network_trunk(inputs, bg_rate)
 
 
-def set_up_network_trunk(inputs):
+def set_up_network_trunk(inputs, bg_rate):
     """Configure neuron populations.
     ========== ================= =================
     name       number of neurons type
@@ -230,7 +236,8 @@ def set_up_network_trunk(inputs):
     neuronpop = nest.Create("iaf_neuron", NUM_TGT_NEURONS, params=NEURON_DICT)
     for neuron in neuronpop:
         # print nest.GetStatus([neuron])
-        nest.SetStatus([neuron], {"tau_m": np.random.uniform(25.0, 35.0)})
+        # nest.SetStatus([neuron], {"tau_m": np.random.uniform(25.0, 35.0)})
+        pass
 
     # Connect the parrots to the neurons under test
     conn_dict = {"rule": "all_to_all"}
@@ -244,11 +251,11 @@ def set_up_network_trunk(inputs):
                            "weight": IPSC_BG}
         if NUM_BG_INH > 0:
             background_inh = nest.Create("poisson_generator", NUM_BG_INH)
-            nest.SetStatus(background_inh, {"rate": R_INP_BG})
+            nest.SetStatus(background_inh, {"rate": bg_rate})
             nest.Connect(background_inh, neuronpop, conn_dict, bg_syn_dict_inh)
         if NUM_BG_EXC > 0:
             background_exc = nest.Create("poisson_generator", NUM_BG_EXC)
-            nest.SetStatus(background_exc, {"rate": R_INP_BG})
+            nest.SetStatus(background_exc, {"rate": bg_rate})
             nest.Connect(background_exc, neuronpop, conn_dict, bg_syn_dict_exc)
 
     voltmeter = nest.Create("voltmeter", NUM_TGT_NEURONS)
@@ -267,9 +274,9 @@ def generate_target_spiketrain(inputpop, nrnpop, spikedetector):
     old_weights = get_weights(inputpop)
     weights = copy.copy(old_weights)
     for row in range(len(weights)):
-        # weights[row] = TARGET_EPSP*math.sin(float(row)/5.0)
+        weights[row] = TARGET_EPSP*math.sin(float(row)/5.0)+TARGET_EPSP_OFFSET
         # weights[row] = random.randint(0, 1) * TARGET_EPSP
-        weights[row] = TARGET_EPSP
+        # weights[row] = TARGET_EPSP
     # weights[int((NUM_SYNAPSES-NUM_BG)/2)] = TARGET_EPSP
     print weights
     set_weights(inputpop, weights)
@@ -277,7 +284,7 @@ def generate_target_spiketrain(inputpop, nrnpop, spikedetector):
     target_trains = get_spiketrains(nrnpop, spikedetector)
     print target_trains
 
-    return target_trains
+    return target_trains, weights
 
 def reset_kernel():
     old_seed = nest.GetStatus([0])[0]['rng_seeds'][0]
@@ -301,21 +308,24 @@ def main_function():
     input_spikes = generate_poisson_spike_trains()
     # input_spikes = generate_regular_spike_trains()
 
-    target = [[] for nrn in range(NUM_TGT_NEURONS)]
+    target = [[] for _ in range(NUM_TGT_NEURONS)]
     is_empty = lambda x: not x
+    target_weights = None
     while any([is_empty(tgt) for tgt in target]):
         reset_kernel()
         inputs, neuronpop, voltmeter, spikedetector = \
-                                                set_up_network(input_spikes)
-        target = generate_target_spiketrain(inputs, neuronpop, spikedetector)
+                                                set_up_network(input_spikes,
+                                                               0.0)
+        target, target_weights = generate_target_spiketrain(inputs, neuronpop,
+                                                            spikedetector)
         nest.voltage_trace.from_device([voltmeter[0]])
         plt.show()
 
-    target_weights = get_weights(inputs)
 
     reset_kernel()
     inputs, neuronpop, voltmeter, spikedetector = \
-                                                set_up_network(input_spikes)
+                                                set_up_network(input_spikes,
+                                                               R_INP_BG)
 
     initial_weights = get_weights(inputs)
 
@@ -344,7 +354,8 @@ def main_function():
 
         reset_kernel()
         inputs, neuronpop, voltmeter, spikedetector = \
-                                                set_up_network(input_spikes)
+                                                set_up_network(input_spikes,
+                                                               R_INP_BG)
 
         success = apply_reward(inputs, weights_before, weights_after, reward,
                                mean_reward)

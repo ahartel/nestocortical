@@ -29,12 +29,12 @@ def vp_metric_other(target, model, cost):
     for i in range(1, len(target)+1):
         # iterate column-wise
         for j in range(1, len(model)+1):
-            q_factor = cost * abs(target[i-1] - model[j-1])
-            costs[i, j] = min([costs[i-1, j] + 1,
-                               costs[i, j-1] + 1,
-                               costs[i-1, j-1] + q_factor])
+            # q_factor = cost * abs(target[i-1] - model[j-1])
+            # costs[i, j] = min([costs[i-1, j] + 1,
+                               # costs[i, j-1] + 1,
+                               # costs[i-1, j-1] + q_factor])
             # modified the previous line from this state:
-            # costs[i, j] = min([costs[i-1, j] + 1, costs[i, j-1] + 1, costs[i-1, j-1] + q * abs(target[i-1] - model[j-1])])
+            costs[i, j] = min([costs[i-1, j] + 1, costs[i, j-1] + 1, costs[i-1, j-1] + cost * abs(target[i-1] - model[j-1])])
     # print costs
     return costs[i, j]
 
@@ -65,6 +65,13 @@ class vp_test_case(unittest.TestCase):
             b_train = a_train + cost
             self.assertAlmostEqual(vp_metric_other(a_train, b_train, cost),
                                    cost*cost*T)
+
+    def test_random(self):
+        a_train = [183.0, 277.9, 390.2, 479.3, 564.3, 656.8, 781.3]
+        b_train = [111.2, 171.7, 212.2, 269.0, 378.8, 460.5, 494.4, 541.1, 573.8, 648.1, 701.6, 762.2, 863.1]
+        a_train = [183.0, 277.90000000000003, 390.19999999999999, 479.30000000000001, 564.30000000000007, 656.80000000000007, 781.30000000000007]
+        b_train = [111.2, 171.70000000000002, 212.20000000000002, 269.0, 378.80000000000001, 460.5, 494.40000000000003, 541.10000000000002, 573.80000000000007, 648.10000000000002, 701.60000000000002, 762.20000000000005, 863.10000000000002]
+        vp_metric_other(a_train, b_train, 10.0)
 
     def test_spike_count(self):
         """Compare a spike train with an empty spike train, such that the
